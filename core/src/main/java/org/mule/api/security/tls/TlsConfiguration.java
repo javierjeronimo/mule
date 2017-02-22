@@ -7,6 +7,7 @@
 package org.mule.api.security.tls;
 
 import static org.mule.api.config.MuleProperties.SYSTEM_PROPERTY_PREFIX;
+
 import org.mule.api.lifecycle.CreateException;
 import org.mule.api.security.TlsDirectKeyStore;
 import org.mule.api.security.TlsDirectTrustStore;
@@ -26,8 +27,21 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
+import java.security.cert.CRL;
+import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 
+import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -328,7 +342,33 @@ public final class TlsConfiguration
             try
             {
                 trustManagerFactory = TrustManagerFactory.getInstance(trustManagerAlgorithm);
-                trustManagerFactory.init(trustStore);
+
+
+                // Revocation checking is only supported for PKIX algorithm
+                if ("PKIX".equalsIgnoreCase(getTrustManagerAlgorithm()))
+                {
+                    Certificate certificate = trustStore.getCertificate("server ca");
+
+                    PKIXBuilderParameters pbParams = new PKIXBuilderParameters(Collections.singleton(new TrustAnchor((X509Certificate)certificate, null)), new X509CertSelector());
+
+                    // Make sure revocation checking is enabled
+                    pbParams.setRevocationEnabled(true);
+
+                    Collection<? extends CRL> crls = loadCRL("tls/test/crl");
+                    if (crls != null && !crls.isEmpty())
+                    {
+                        pbParams.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(crls)));
+                    }
+
+                    Security.setProperty("ocsp.enable", "false");
+                    System.setProperty("com.sun.security.enableCRLDP", "false");
+
+                    trustManagerFactory.init(new CertPathTrustManagerParameters(pbParams));
+                }
+                else
+                {
+                    trustManagerFactory.init(trustStore);
+                }
             }
             catch (Exception e)
             {
@@ -336,6 +376,30 @@ public final class TlsConfiguration
                         CoreMessages.failedToLoad("Trust Manager (" + trustManagerAlgorithm + ")"), e, this);
             }
         }
+    }
+
+    public Collection<? extends CRL> loadCRL(String crlPath) throws Exception
+    {
+        Collection<? extends CRL> crlList = null;
+
+        if (crlPath != null)
+        {
+            InputStream in = null;
+            try
+            {
+                in = IOUtils.getResourceAsStream(crlPath, getClass());
+                crlList = CertificateFactory.getInstance("X.509").generateCRLs(in);
+            }
+            finally
+            {
+                if (in != null)
+                {
+                    in.close();
+                }
+            }
+        }
+
+        return crlList;
     }
 
 
