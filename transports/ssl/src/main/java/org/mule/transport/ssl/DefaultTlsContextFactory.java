@@ -7,6 +7,7 @@
 package org.mule.transport.ssl;
 
 
+import com.google.common.base.Joiner;
 import org.mule.api.lifecycle.CreateException;
 import org.mule.api.lifecycle.Initialisable;
 import org.mule.api.lifecycle.InitialisationException;
@@ -18,20 +19,16 @@ import org.mule.transport.ssl.api.TlsContextTrustStoreConfiguration;
 import org.mule.util.ArrayUtils;
 import org.mule.util.FileUtils;
 import org.mule.util.StringUtils;
-
-import com.google.common.base.Joiner;
-
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Default implementation of the {@code TlsContextFactory} interface, which delegates all its operations to a
@@ -201,6 +198,16 @@ public class DefaultTlsContextFactory implements TlsContextFactory, Initialisabl
         tlsConfiguration.setTrustStoreType(trustStoreType);
     }
 
+    public String getTrustStoreCrlFile()
+    {
+        return tlsConfiguration.getTrustStoreCrlFile();
+    }
+
+    public void setTrustStoreCrlFile(String trustStoreCrlFile)
+    {
+        tlsConfiguration.setTrustStoreCrlFile(trustStoreCrlFile);
+    }
+
     public String getTrustStorePassword()
     {
         return tlsConfiguration.getTrustStorePassword();
@@ -234,7 +241,6 @@ public class DefaultTlsContextFactory implements TlsContextFactory, Initialisabl
         }
         this.trustStoreInsecure = insecure;
     }
-
 
     @Override
     public SSLContext createSslContext() throws KeyManagementException, NoSuchAlgorithmException, CreateException
@@ -375,6 +381,12 @@ public class DefaultTlsContextFactory implements TlsContextFactory, Initialisabl
             public boolean isInsecure()
             {
                 return isTrustStoreInsecure();
+            }
+
+            @Override
+            public String getCrlFile()
+            {
+                return getCrlFile();
             }
         };
     }

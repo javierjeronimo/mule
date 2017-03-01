@@ -216,6 +216,14 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="crlFile" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation>
+                    The path to a CRL (Certificate Revocation List) file to be used for this trust store.
+                    A certificate mentioned there will not be accepted for authentication.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
 
 

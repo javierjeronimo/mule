@@ -9,22 +9,22 @@
                http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
 
     <tls:context name="serverTlsContext" >
-        <tls:trust-store path="tls/test/server.jceks" password="password" type="jceks" algorithm="PKIX"/>
+        <tls:trust-store path="tls/test/serverTruststore.jceks" password="password" type="jceks" algorithm="PKIX"/>
         <tls:key-store path="tls/test/server.jceks" keyPassword="123456" password="password" type="jceks" algorithm="PKIX"/>
     </tls:context>
 
     <tls:context name="serverRevokedTlsContext" >
-        <tls:trust-store path="tls/test/server.jceks" password="password" type="jceks" algorithm="PKIX"/>
+        <tls:trust-store path="tls/test/serverTruststore.jceks" password="password" type="jceks" algorithm="PKIX" crlFile="tls/test/crl"/>
         <tls:key-store path="tls/test/server.jceks" keyPassword="123456" password="password" type="jceks" algorithm="PKIX"/>
     </tls:context>
 
     <tls:context name="clientTlsContext" >
-        <tls:trust-store path="tls/test/server.jceks" password="password" type="jceks" algorithm="PKIX"/>
+        <tls:trust-store path="tls/test/serverTruststore.jceks" password="password" type="jceks" algorithm="PKIX"/>
         <tls:key-store path="tls/test/client.jceks" keyPassword="123456" password="password" type="jceks" algorithm="PKIX"/>
     </tls:context>
 
     <tls:context name="clientNotCertifiedTlsContext" >
-        <tls:trust-store path="tls/test/server.jceks" password="password" type="jceks" algorithm="PKIX"/>
+        <tls:trust-store path="tls/test/serverTruststore.jceks" password="password" type="jceks" algorithm="PKIX"/>
         <tls:key-store path="tls/test/clientNoCert.jceks" keyPassword="123456" password="password" type="jceks" algorithm="PKIX"/>
     </tls:context>
 
@@ -32,26 +32,32 @@
     <http:listener-config name="serverRevokedConfig" protocol="HTTPS" host="localhost" port="${portRevoked}" tlsContext-ref="serverRevokedTlsContext" />
     <http:request-config name="clientConfig" protocol="HTTPS" host="localhost" port="${port}" tlsContext-ref="clientTlsContext" />
     <http:request-config name="clientNotCertifiedConfig" protocol="HTTPS" host="localhost" port="${port}" tlsContext-ref="clientNotCertifiedTlsContext" />
+    <http:listener-config name="serverPublicConfig" protocol="HTTP" host="localhost" port="8180" />
 
-    <flow name="testFlowAServer">
-        <http:listener config-ref="serverConfig" path="/" allowedMethods="GET"/>
+    <flow name="testFlowServer">
+        <http:listener config-ref="serverConfig" path="/server" allowedMethods="GET"/>
         <set-payload value="ok"/>
     </flow>
 
     <flow name="testFlowServerRevoked">
-        <http:listener config-ref="serverRevokedConfig" path="/" allowedMethods="GET"/>
+        <http:listener config-ref="serverRevokedConfig" path="/serverRevoked" allowedMethods="GET"/>
         <set-payload value="ok"/>
     </flow>
 
+    <flow name="testFlowServerPublic">
+        <http:listener config-ref="serverPublicConfig" path="/crl" allowedMethods="GET"/>
+        <parse-template location="/Users/alejandropulver/Development/mule_worktrees/mule-3.x/modules/http/src/test/resources/tls/test/crl"/>
+    </flow>
+
     <flow name="testFlowClientRevoked">
-        <http:request config-ref="clientConfig" port="${portRevoked}" path="/" method="GET" />
+        <http:request config-ref="clientConfig" port="${portRevoked}" path="/serverRevoked" method="GET" />
     </flow>
 
     <flow name="testFlowClient">
-        <http:request config-ref="clientConfig" port="${portAllowed}" path="/" method="GET" />
+        <http:request config-ref="clientConfig" port="${portAllowed}" path="/server" method="GET" />
     </flow>
 
     <flow name="testFlowClientNotCertified">
-        <http:request config-ref="clientNotCertifiedConfig" port="${portAllowed}" path="/" method="GET" />
+        <http:request config-ref="clientNotCertifiedConfig" port="${portAllowed}" path="/server" method="GET" />
     </flow>
 </mule>

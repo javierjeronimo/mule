@@ -16,4 +16,8 @@ public interface TlsContextTrustStoreConfiguration extends TlsContextStoreConfig
      */
     boolean isInsecure();
 
+    /**
+     * @return The CRL path used by the trust store (list of ignored certificates).
+     */
+    String getCrlFile();
 }

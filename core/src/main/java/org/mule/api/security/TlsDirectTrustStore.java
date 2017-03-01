@@ -47,6 +47,10 @@ public interface TlsDirectTrustStore extends TlsIndirectTrustStore
      */
     void setTrustManagerAlgorithm(String trustManagerAlgorithm);
 
+    String getTrustStoreCrlFile();
+
+    void setTrustStoreCrlFile(String trustStoreCrlFile);
+
     /**
      * @return Either the factory defined by {@link #setTrustManagerFactory(TrustManagerFactory)} or one
      * constructed from the parameters in this interface ({@link #setTrustStoreType(String)} etc).

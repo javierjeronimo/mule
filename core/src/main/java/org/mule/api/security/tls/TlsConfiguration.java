@@ -6,53 +6,27 @@
  */
 package org.mule.api.security.tls;
 
-import static org.mule.api.config.MuleProperties.SYSTEM_PROPERTY_PREFIX;
-
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.mule.api.lifecycle.CreateException;
 import org.mule.api.security.TlsDirectKeyStore;
 import org.mule.api.security.TlsDirectTrustStore;
 import org.mule.api.security.TlsIndirectKeyStore;
 import org.mule.config.i18n.CoreMessages;
-import org.mule.util.ArrayUtils;
-import org.mule.util.FileUtils;
-import org.mule.util.IOUtils;
-import org.mule.util.SecurityUtils;
-import org.mule.util.StringUtils;
+import org.mule.util.*;
 
+import javax.net.ssl.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
-import java.security.cert.CRL;
-import java.security.cert.CertStore;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CollectionCertStoreParameters;
-import java.security.cert.PKIXBuilderParameters;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509CertSelector;
-import java.security.cert.X509Certificate;
+import java.security.*;
+import java.security.cert.*;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 
-import javax.net.ssl.CertPathTrustManagerParameters;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import static org.mule.api.config.MuleProperties.SYSTEM_PROPERTY_PREFIX;
 
 /**
  * Support for configuring TLS/SSL connections.
@@ -164,6 +138,7 @@ public final class TlsConfiguration
     private String trustStoreName = null;
     private String trustStorePassword = null;
     private String trustStoreType = DEFAULT_KEYSTORE_TYPE;
+    private String trustStoreCrlFile = null;
     private String trustManagerAlgorithm = DEFAULT_KEYMANAGER_ALGORITHM;
     private TrustManagerFactory trustManagerFactory = null;
     private boolean explicitTrustStoreOnly = false;
@@ -343,30 +318,43 @@ public final class TlsConfiguration
             {
                 trustManagerFactory = TrustManagerFactory.getInstance(trustManagerAlgorithm);
 
-
                 // Revocation checking is only supported for PKIX algorithm
-                if ("PKIX".equalsIgnoreCase(getTrustManagerAlgorithm()))
+                if ("PKIX".equalsIgnoreCase(getTrustManagerAlgorithm()) && getTrustStoreCrlFile() != null)
                 {
-                    Certificate certificate = trustStore.getCertificate("server ca");
+                    // When creating build parameters we must manually trust each certificate (which is automatic otherwise)
+                    Enumeration<String> aliases = trustStore.aliases();
+                    HashSet<TrustAnchor> trustAnchors = new HashSet<>();
+                    while (aliases.hasMoreElements())
+                    {
+                        String alias = aliases.nextElement();
+                        if (trustStore.isCertificateEntry(alias))
+                        {
+                            trustAnchors.add(new TrustAnchor((X509Certificate)trustStore.getCertificate(alias), null));
+                        }
+                    }
 
-                    PKIXBuilderParameters pbParams = new PKIXBuilderParameters(Collections.singleton(new TrustAnchor((X509Certificate)certificate, null)), new X509CertSelector());
+                    PKIXBuilderParameters pbParams = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
 
-                    // Make sure revocation checking is enabled
+                    // Make sure revocation checking is enabled (com.sun.net.ssl.checkRevocation)
                     pbParams.setRevocationEnabled(true);
 
-                    Collection<? extends CRL> crls = loadCRL("tls/test/crl");
+                    Collection<? extends CRL> crls = loadCRL(getTrustStoreCrlFile());
                     if (crls != null && !crls.isEmpty())
                     {
                         pbParams.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(crls)));
                     }
 
-                    Security.setProperty("ocsp.enable", "false");
-                    System.setProperty("com.sun.security.enableCRLDP", "false");
+                    //Security.setProperty("ocsp.enable", "false");
+                    //System.setProperty("com.sun.security.enableCRLDP", "false");
 
                     trustManagerFactory.init(new CertPathTrustManagerParameters(pbParams));
                 }
                 else
                 {
+                    if ("PKIX".equalsIgnoreCase(getTrustManagerAlgorithm()) && getTrustStoreCrlFile() == null)
+                    {
+                        logger.warn("TrustStore: crlFile is ignored when algorithm is different from PKIX");
+                    }
                     trustManagerFactory.init(trustStore);
                 }
             }
@@ -649,6 +637,16 @@ public final class TlsConfiguration
         this.trustStoreType = trustStoreType;
     }
 
+    public String getTrustStoreCrlFile()
+    {
+        return trustStoreCrlFile;
+    }
+
+    public void setTrustStoreCrlFile(String trustStoreCrlFile)
+    {
+        this.trustStoreCrlFile = trustStoreCrlFile;
+    }
+
     @Override
     public String getTrustManagerAlgorithm()
     {
@@ -799,6 +797,10 @@ public final class TlsConfiguration
         {
             return false;
         }
+        if (trustStoreCrlFile != null ? !trustStoreCrlFile.equals(that.trustStoreCrlFile) : that.trustStoreCrlFile != null)
+        {
+            return false;
+        }
 
         return true;
     }
@@ -821,6 +823,7 @@ public final class TlsConfiguration
         result = hashcodePrimeNumber * result + (trustStoreName != null ? trustStoreName.hashCode() : 0);
         result = hashcodePrimeNumber * result + (trustStorePassword != null ? trustStorePassword.hashCode() : 0);
         result = hashcodePrimeNumber * result + (trustStoreType != null ? trustStoreType.hashCode() : 0);
+        result = hashcodePrimeNumber * result + (trustStoreCrlFile != null ? trustStoreCrlFile.hashCode() : 0);
         result = hashcodePrimeNumber * result + (trustManagerAlgorithm != null ? trustManagerAlgorithm.hashCode() : 0);
         result = hashcodePrimeNumber * result + (trustManagerFactory != null ? trustManagerFactory.hashCode() : 0);
         result = hashcodePrimeNumber * result + (explicitTrustStoreOnly ? 1 : 0);

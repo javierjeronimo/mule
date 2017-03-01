@@ -16,13 +16,12 @@ import org.mule.api.security.tls.TlsConfiguration;
 import org.mule.transport.tcp.TcpConnector;
 import org.mule.transport.tcp.protocols.DirectProtocol;
 
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.URI;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.URI;
 
 /**
  * <code>SslConnector</code> provides a connector for SSL connections.
@@ -166,6 +165,10 @@ public class SslConnector extends TcpConnector
         return tls.getTrustStoreType();
     }
 
+    public String getTrustStoreCrlFile() {
+        return tls.getTrustStoreCrlFile();
+    }
+
     public boolean isExplicitTrustStoreOnly()
     {
         return tls.isExplicitTrustStoreOnly();
@@ -259,6 +262,10 @@ public class SslConnector extends TcpConnector
     public void setTrustStoreType(String trustStoreType)
     {
         tls.setTrustStoreType(trustStoreType);
+    }
+
+    public void setTrustStoreCrlFile(String trustStoreCrlFile) {
+        tls.setTrustStoreCrlFile(trustStoreCrlFile);
     }
 
     public long getSslHandshakeTimeout()
