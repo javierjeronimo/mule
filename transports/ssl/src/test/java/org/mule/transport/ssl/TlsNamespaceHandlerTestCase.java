@@ -26,7 +26,7 @@ public class TlsNamespaceHandlerTestCase extends FunctionalTestCase
     private static final String PASSWORD = "mulepassword";
     private static final String ALIAS = "muleserver";
     private static final String TYPE = "jks";
-    private static final String ALGORITHM = "SunX509";
+    private static final String ALGORITHM = "PKIX";
 
     @Override
     protected String getConfigFile()

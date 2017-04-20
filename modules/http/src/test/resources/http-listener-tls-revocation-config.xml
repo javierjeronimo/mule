@@ -46,7 +46,7 @@
 
     <flow name="testFlowServerPublic">
         <http:listener config-ref="serverPublicConfig" path="/crl" allowedMethods="GET"/>
-        <parse-template location="/Users/alejandropulver/Development/mule_worktrees/mule-3.x/modules/http/src/test/resources/tls/test/crl"/>
+        <parse-template location="/Users/alejandropulver/Development/mule-everything-3.x/mule/modules/http/src/test/resources/tls/test/crl"/>
     </flow>
 
     <flow name="testFlowClientRevoked">
