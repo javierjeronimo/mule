@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -150,7 +151,8 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     List<URL> containerUrls =
         buildContainerUrlClassification(context, directDependencies, serviceUrlClassifications, pluginUrlClassifications,
                                         rootArtifactType);
-    List<URL> applicationUrls = buildApplicationUrlClassification(context, directDependencies, rootArtifactType);
+    List<URL> applicationUrls = buildApplicationUrlClassification(context, directDependencies, serviceUrlClassifications,
+                                                                  pluginUrlClassifications, rootArtifactType);
 
     return new ArtifactsUrlClassification(containerUrls, serviceUrlClassifications, pluginSharedLibUrls, pluginUrlClassifications,
                                           applicationUrls);
@@ -241,19 +243,11 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
                                                     List<ArtifactUrlClassification> serviceUrlClassifications,
                                                     List<PluginUrlClassification> pluginUrlClassifications,
                                                     ArtifactClassificationType rootArtifactType) {
-    directDependencies = directDependencies.stream()
-        .filter(getContainerDirectDependenciesFilter(rootArtifactType))
-        .filter(dependency -> {
-          Artifact artifact = dependency.getArtifact();
-          return (!serviceUrlClassifications.stream()
-              .filter(artifactUrlClassification -> artifactUrlClassification.getArtifactId().equals(toId(artifact))).findAny()
-              .isPresent()
-              && !pluginUrlClassifications.stream()
-                  .filter(artifactUrlClassification -> artifactUrlClassification.getArtifactId().equals(toId(artifact))).findAny()
-                  .isPresent());
-        })
-        .map(depToTransform -> depToTransform.setScope(COMPILE))
-        .collect(toList());
+    logger.debug("Building application classification");
+    directDependencies =
+        removeFromDependencies(directDependencies, serviceUrlClassifications, pluginUrlClassifications,
+                               getContainerDirectDependenciesFilter(rootArtifactType),
+                               dependency -> dependency.setScope(COMPILE));
 
     logger.debug("Selected direct dependencies to be used for resolving container dependency graph (changed to compile in " +
         "order to resolve the graph): {}", directDependencies);
@@ -294,7 +288,7 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     }).collect(toList());
 
     if (MODULE.equals(rootArtifactType)) {
-      File rootArtifactOutputFile = resolveRootArtifactFile(context.getRootArtifact());
+      File rootArtifactOutputFile = resolveRootArtifactFile(context.getRootArtifact(), JAR_EXTENSION, JAR_EXTENSION);
       if (rootArtifactOutputFile == null) {
         throw new IllegalStateException("rootArtifact (" + context.getRootArtifact()
             + ") identified as MODULE but doesn't have an output");
@@ -305,6 +299,27 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     resolveSnapshotVersionsToTimestampedFromClassPath(containerUrls, context.getClassPathURLs());
 
     return containerUrls;
+  }
+
+  private List<Dependency> removeFromDependencies(List<Dependency> directDependencies,
+                                                  List<ArtifactUrlClassification> serviceUrlClassifications,
+                                                  List<PluginUrlClassification> pluginUrlClassifications,
+                                                  Predicate<Dependency> filter,
+                                                  Function<Dependency, Dependency> transformDependencyFunction) {
+    directDependencies = directDependencies.stream()
+        .filter(filter)
+        .filter(dependency -> {
+          Artifact artifact = dependency.getArtifact();
+          return (!serviceUrlClassifications.stream()
+              .filter(artifactUrlClassification -> artifactUrlClassification.getArtifactId().equals(toId(artifact))).findAny()
+              .isPresent()
+              && !pluginUrlClassifications.stream()
+                  .filter(artifactUrlClassification -> artifactUrlClassification.getArtifactId().equals(toId(artifact))).findAny()
+                  .isPresent());
+        })
+        .map(transformDependencyFunction)
+        .collect(toList());
+    return directDependencies;
   }
 
   /**
@@ -732,19 +747,32 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
    */
   private List<URL> buildApplicationUrlClassification(ClassPathClassifierContext context,
                                                       List<Dependency> directDependencies,
+                                                      List<ArtifactUrlClassification> serviceUrlClassifications,
+                                                      List<PluginUrlClassification> pluginUrlClassifications,
                                                       ArtifactClassificationType rootArtifactType) {
     logger.debug("Building application classification");
-    Artifact rootArtifact = context.getRootArtifact();
+    directDependencies =
+        removeFromDependencies(directDependencies, serviceUrlClassifications, pluginUrlClassifications,
+                               dependency -> dependency.getScope().equals(TEST),
+                               dependency -> dependency.setScope(COMPILE));
 
-    DependencyFilter dependencyFilter = new PatternInclusionsDependencyFilter(context.getTestInclusions());
-    logger.debug("Using filter for dependency graph to include: '{}'", context.getTestInclusions());
+    Artifact rootArtifact = context.getRootArtifact();
 
     List<File> appFiles = newArrayList();
     List<String> exclusionsPatterns = newArrayList();
+    serviceUrlClassifications
+        .forEach(artifactUrlClassification -> exclusionsPatterns.add(artifactUrlClassification.getArtifactId()));
+    pluginUrlClassifications
+        .forEach(artifactUrlClassification -> exclusionsPatterns.add(artifactUrlClassification.getArtifactId()));
+
+    File rootArtifactTestOutputFile = resolveRootArtifactFile(rootArtifact, JAR_EXTENSION, TESTS_CLASSIFIER);
+    if (rootArtifactTestOutputFile != null) {
+      appFiles.add(rootArtifactTestOutputFile);
+    }
 
     if (APPLICATION.equals(rootArtifactType)) {
       logger.debug("RootArtifact identified as {} so is going to be added to application classification", APPLICATION);
-      File rootArtifactOutputFile = resolveRootArtifactFile(rootArtifact);
+      File rootArtifactOutputFile = resolveRootArtifactFile(rootArtifact, JAR_EXTENSION, JAR_EXTENSION);
       if (rootArtifactOutputFile != null) {
         appFiles.add(rootArtifactOutputFile);
       } else {
@@ -754,23 +782,9 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
     } else {
       logger.debug("RootArtifact already classified as plugin or module, excluding it from application classification");
       exclusionsPatterns.add(rootArtifact.getGroupId() + MAVEN_COORDINATES_SEPARATOR + rootArtifact.getArtifactId() +
-          MAVEN_COORDINATES_SEPARATOR + "*" + MAVEN_COORDINATES_SEPARATOR + "*" + MAVEN_COORDINATES_SEPARATOR
+          MAVEN_COORDINATES_SEPARATOR + "jar" + MAVEN_COORDINATES_SEPARATOR + "*" + MAVEN_COORDINATES_SEPARATOR
           + rootArtifact.getVersion());
     }
-
-    directDependencies = directDependencies.stream()
-        .map(toTransform -> {
-          if (toTransform.getScope().equals(TEST)) {
-            // TODO MULE-11332 Review other manifestations of this bug and add unit tests
-            return toTransform.setScope(COMPILE);
-          }
-          if (PLUGIN.equals(rootArtifactType) && toTransform.getScope().equals(COMPILE)) {
-            // TODO MULE-11332 Review other manifestations of this bug and add unit tests
-            return toTransform.setScope(PROVIDED);
-          }
-          return toTransform;
-        })
-        .collect(toList());
 
     logger.debug("OR exclude: {}", context.getExcludedArtifacts());
     exclusionsPatterns.addAll(context.getExcludedArtifacts());
@@ -795,10 +809,19 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
                                                                                rootArtifact.getVersion()),
                                                            TEST);
 
-      List<File> urls = dependencyResolver
-          .resolveDependencies(rootTestDependency, directDependencies, managedDependencies,
-                               orFilter(dependencyFilter,
-                                        new PatternExclusionsDependencyFilter(exclusionsPatterns)));
+      DependencyFilter filter = null;
+      if (!context.getTestInclusions().isEmpty()) {
+        filter = new PatternInclusionsDependencyFilter(context.getTestInclusions());
+        logger.debug("Using filter for dependency graph to include: '{}'", context.getTestInclusions());
+      }
+      if (!exclusionsPatterns.isEmpty()) {
+        final PatternExclusionsDependencyFilter exclusionsDependencyFilter =
+            new PatternExclusionsDependencyFilter(exclusionsPatterns);
+        filter = filter == null ? exclusionsDependencyFilter : andFilter(filter, exclusionsDependencyFilter);
+      }
+
+      List<File> urls =
+          dependencyResolver.resolveDependencies(rootTestDependency, directDependencies, managedDependencies, filter);
       appFiles
           .addAll(urls);
     } catch (Exception e) {
@@ -818,13 +841,13 @@ public class AetherClassPathClassifier implements ClassPathClassifier {
    * @param rootArtifact {@link Artifact} being classified
    * @return {@link File} to be added to class loader
    */
-  private File resolveRootArtifactFile(Artifact rootArtifact) {
+  private File resolveRootArtifactFile(Artifact rootArtifact, String extension, String classifier) {
     final DefaultArtifact jarArtifact = new DefaultArtifact(rootArtifact.getGroupId(), rootArtifact.getArtifactId(),
-                                                            JAR_EXTENSION, JAR_EXTENSION, rootArtifact.getVersion());
+                                                            classifier, extension, rootArtifact.getVersion());
     try {
       return dependencyResolver.resolveArtifact(jarArtifact).getArtifact().getFile();
     } catch (ArtifactResolutionException e) {
-      logger.warn("'{}' rootArtifact output {} file couldn't be resolved", rootArtifact, JAR_EXTENSION);
+      logger.warn("'{}' rootArtifact output {} file for classifier {} couldn't be resolved", rootArtifact, extension, classifier);
       return null;
     }
   }

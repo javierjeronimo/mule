@@ -10,9 +10,14 @@ package org.mule.test.runner.api;
 import static com.google.common.base.Joiner.on;
 import static java.util.stream.Collectors.toList;
 import static org.eclipse.aether.util.artifact.ArtifactIdUtils.toId;
+import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
+import static org.eclipse.aether.util.artifact.JavaScopes.TEST;
 import static org.mule.runtime.api.util.Preconditions.checkNotNull;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.aether.RepositorySystem;
@@ -32,7 +37,10 @@ import org.eclipse.aether.resolution.ArtifactResolutionException;
 import org.eclipse.aether.resolution.ArtifactResult;
 import org.eclipse.aether.resolution.DependencyRequest;
 import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.AndDependencyFilter;
 import org.eclipse.aether.util.filter.PatternInclusionsDependencyFilter;
+import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.eclipse.aether.util.graph.visitor.PathRecordingDependencyVisitor;
 import org.eclipse.aether.util.graph.visitor.PreorderNodeListGenerator;
 import org.slf4j.Logger;
@@ -144,9 +152,18 @@ public class DependencyResolver {
       DependencyRequest dependencyRequest = new DependencyRequest();
       dependencyRequest.setRoot(node);
       dependencyRequest.setCollectRequest(collectRequest);
+
+      Collection<String> excluded = new ArrayList<>();
+      Collections.addAll(excluded, JavaScopes.PROVIDED, JavaScopes.SYSTEM, RUNTIME, TEST);
+
+      Collection<String> included = new ArrayList<>();
+      included.add(JavaScopes.COMPILE);
+
+      DependencyFilter filter = new ScopeDependencyFilter(included, excluded);
       if (dependencyFilter != null) {
-        dependencyRequest.setFilter(dependencyFilter);
+        filter = new AndDependencyFilter(filter, dependencyFilter);
       }
+      dependencyRequest.setFilter(filter);
 
       node = system.resolveDependencies(session, dependencyRequest).getRoot();
     } catch (DependencyResolutionException e) {

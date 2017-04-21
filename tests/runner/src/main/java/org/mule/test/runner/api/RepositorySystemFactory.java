@@ -11,6 +11,8 @@ import static java.util.Collections.emptyList;
 import static org.apache.maven.repository.internal.MavenRepositorySystemUtils.newSession;
 import static org.eclipse.aether.repository.RepositoryPolicy.CHECKSUM_POLICY_IGNORE;
 import static org.eclipse.aether.repository.RepositoryPolicy.UPDATE_POLICY_NEVER;
+import static org.eclipse.aether.util.artifact.JavaScopes.RUNTIME;
+import static org.eclipse.aether.util.artifact.JavaScopes.TEST;
 import org.mule.test.runner.classification.DefaultWorkspaceReader;
 import org.mule.test.runner.classification.LoggerRepositoryListener;
 
@@ -24,6 +26,7 @@ import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.collection.DependencySelector;
 import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
 import org.eclipse.aether.impl.DefaultServiceLocator;
 import org.eclipse.aether.repository.LocalRepository;
@@ -33,6 +36,10 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.util.graph.selector.AndDependencySelector;
+import org.eclipse.aether.util.graph.selector.ExclusionDependencySelector;
+import org.eclipse.aether.util.graph.selector.OptionalDependencySelector;
+import org.eclipse.aether.util.graph.selector.ScopeDependencySelector;
 
 /**
  * Factory to create a {@link RepositorySystem} from Eclipse Aether to work in {@code offline} mode and resolve dependencies
@@ -103,6 +110,13 @@ public class RepositorySystemFactory {
 
     session.setUpdatePolicy(UPDATE_POLICY_NEVER);
     session.setChecksumPolicy(CHECKSUM_POLICY_IGNORE);
+
+    DependencySelector dependencySelector =
+        new AndDependencySelector(new ScopeDependencySelector(RUNTIME, TEST),
+                                  new OptionalDependencySelector(),
+                                  new ExclusionDependencySelector());
+    session.setDependencySelector(dependencySelector);
+
     return session;
   }
 
