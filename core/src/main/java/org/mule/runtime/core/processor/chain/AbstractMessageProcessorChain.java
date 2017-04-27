@@ -17,8 +17,10 @@ import static org.mule.runtime.core.context.notification.MessageProcessorNotific
 import static org.mule.runtime.core.execution.MessageProcessorExecutionTemplate.createExecutionTemplate;
 import static org.mule.runtime.core.internal.util.rx.Operators.requestUnbounded;
 import static org.mule.runtime.core.util.ExceptionUtils.createErrorEvent;
+import static org.mule.runtime.core.util.ExceptionUtils.getRootCauseException;
 import static org.mule.runtime.core.util.ExceptionUtils.putContext;
 import static org.slf4j.LoggerFactory.getLogger;
+import static reactor.core.Exceptions.unwrap;
 import static reactor.core.publisher.Flux.from;
 import static reactor.core.publisher.Mono.empty;
 
@@ -123,12 +125,7 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
       for (BiFunction<Processor, ReactiveProcessor, ReactiveProcessor> interceptor : interceptorsToBeExecuted) {
         processorFunction = interceptor.apply(processor, processorFunction);
       }
-
-      ReactiveProcessor finalProcessorFunction = processorFunction;
-      stream = from(stream).flatMap(event -> Flux.just(event)
-          .transform(finalProcessorFunction)
-          .onErrorResumeWith(MessagingException.class, handleError(event.getContext())));
-      return stream;
+      return from(stream).transform(processorFunction);
     };
   }
 
@@ -158,9 +155,9 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
     }
 
     // Handle errors
-    interceptors.add((processor, next) -> stream -> from(stream)
+    interceptors.add((processor, next) -> stream -> from(stream).flatMap(event -> Flux.just(event)
         .transform(next)
-        .mapError(MessagingException.class, handleMessagingException(processor)));
+        .mapError(handleMessagingException(event, processor))));
     // Notify
     interceptors.add((processor, next) -> stream -> from(stream)
         .doOnNext(preNotification(processor))
@@ -182,19 +179,30 @@ public abstract class AbstractMessageProcessorChain extends AbstractAnnotatedObj
           interceptorsToBeExecuted.add(0, reactiveInterceptorAdapter);
         });
     interceptorsToBeExecuted.addAll(0, interceptors);
+
+    interceptorsToBeExecuted.add((processor, next) -> stream -> from(stream).flatMap(event -> Flux.just(event)
+        .transform(next)
+        .onErrorResumeWith(MessagingException.class, handleError(event.getContext()))));
+
     return interceptorsToBeExecuted;
   }
 
-  private Function<MessagingException, MessagingException> handleMessagingException(Processor processor) {
-    return exception -> {
-      Processor failing = exception.getFailingMessageProcessor();
+  private Function<Throwable, MessagingException> handleMessagingException(Event event, Processor processor) {
+    return throwable -> {
+      throwable = unwrap(throwable);
+      MessagingException messagingException = throwable instanceof MessagingException ? (MessagingException) throwable
+          : new MessagingException(event, getRootCauseException(throwable));
+
+      Processor failing = messagingException.getFailingMessageProcessor();
       if (failing == null) {
         failing = processor;
-        exception = new MessagingException(exception.getI18nMessage(), exception.getEvent(), exception.getCause(), processor);
+        messagingException = new MessagingException(messagingException.getI18nMessage(), messagingException.getEvent(),
+                                                    messagingException.getCause(), processor);
       }
-      exception
-          .setProcessedEvent(createErrorEvent(exception.getEvent(), processor, exception, muleContext.getErrorTypeLocator()));
-      return putContext(exception, failing, exception.getEvent(), flowConstruct, muleContext);
+      messagingException
+          .setProcessedEvent(createErrorEvent(messagingException.getEvent(), processor, messagingException,
+                                              muleContext.getErrorTypeLocator()));
+      return putContext(messagingException, failing, messagingException.getEvent(), flowConstruct, muleContext);
     };
   }
 

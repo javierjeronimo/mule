@@ -39,10 +39,8 @@ import static org.mule.runtime.core.context.notification.MuleContextNotification
 import static org.mule.runtime.core.context.notification.MuleContextNotification.CONTEXT_STARTING;
 import static org.mule.runtime.core.context.notification.MuleContextNotification.CONTEXT_STOPPED;
 import static org.mule.runtime.core.context.notification.MuleContextNotification.CONTEXT_STOPPING;
-import static org.mule.runtime.core.util.ExceptionUtils.getRootCauseException;
 import static org.mule.runtime.core.util.JdkVersionUtils.getSupportedJdks;
 import static org.slf4j.LoggerFactory.getLogger;
-import static reactor.core.Exceptions.unwrap;
 
 import org.mule.runtime.api.config.custom.CustomizationService;
 import org.mule.runtime.api.deployment.management.ComponentInitialStateManager;
@@ -55,7 +53,6 @@ import org.mule.runtime.api.lifecycle.LifecycleException;
 import org.mule.runtime.api.lifecycle.Startable;
 import org.mule.runtime.api.lifecycle.Stoppable;
 import org.mule.runtime.api.lock.LockFactory;
-import org.mule.runtime.core.api.Event;
 import org.mule.runtime.core.api.Injector;
 import org.mule.runtime.core.api.MuleContext;
 import org.mule.runtime.core.api.SingleResourceTransactionFactoryManager;
@@ -253,18 +250,6 @@ public class DefaultMuleContext implements MuleContext {
   private ProcessorInterceptorProvider processorInterceptorManager;
 
   static {
-    // Ensure reactor operatorError hook is always registered.
-    Hooks.onOperatorError((throwable, signal) -> {
-      // Only apply hook for Event signals.
-      if (signal instanceof Event) {
-        throwable = unwrap(throwable);
-        return throwable instanceof MessagingException ? throwable
-            : new MessagingException((Event) signal, getRootCauseException(throwable));
-      } else {
-        return throwable;
-      }
-    });
-
     // Log dropped events/errors rather than blow up which causes cryptic timeouts and stack traces.
     Hooks.onErrorDropped(error -> logger.error("ERROR DROPPED UNEXPECTEDLY" + error));
     Hooks.onNextDropped(event -> logger.error("EVENT DROPPED UNEXPECTEDLY" + event));
