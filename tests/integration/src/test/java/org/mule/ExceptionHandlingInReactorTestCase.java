@@ -16,11 +16,18 @@ import org.mule.runtime.core.api.processor.Processor;
 import org.mule.runtime.core.api.processor.ReactiveProcessor;
 import org.mule.tck.junit4.AbstractMuleContextTestCase;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.joda.time.DateTime;
 import org.junit.Test;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Hooks;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 public class ExceptionHandlingInReactorTestCase extends AbstractMuleContextTestCase {
 
@@ -70,9 +77,52 @@ public class ExceptionHandlingInReactorTestCase extends AbstractMuleContextTestC
         .subscribe(event -> event.getContext().success(event));
 
     from(testEvent().getContext().getResponsePublisher()).subscribe(resultConsumer);
-
-
   }
 
+  @Test
+  public void parallelTest() {
+    Function<Integer,Integer> f1 = x -> {
+      try {
+        System.out.println("Transforming " + x + " on thread " + Thread.currentThread().getId());
+        Thread.sleep(500*(x%5));
+        System.out.println("Done transforming " + x);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+      return x;
+    };
 
+    Consumer<Integer> s1 = x -> {
+      try {
+        System.out.println("Consuming " + x + " on thread " + Thread.currentThread().getId());
+        Thread.sleep(100*(x%5));
+        System.out.println("Done consuming " + x);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    };
+
+    List<Integer> list = new ArrayList<>(Arrays.asList(5, 4, 3, 2, 1));
+    //Flux<Integer> flux = Flux.fromIterable(list)
+    Flux<Integer> flux = Mono.fromCallable(() -> DateTime.now().millisOfDay().get()).repeat().take(5)
+    //Flux<Integer> flux = Flux.create(e -> { e.next(DateTime.now().millisOfDay().get()); })
+      //.take(5)
+      .flatMap(x -> {
+        //return just(x).map(f1).subscribeOn(Schedulers.elastic());
+        //return just(x).map(f1);
+        return just((Integer)x).publishOn(Schedulers.elastic()).map(f1);
+      })
+      .subscribeOn(Schedulers.elastic());
+
+    flux.subscribe(s1);
+    //flux.subscribe(s1);
+    System.out.println("Running in thread " + Thread.currentThread().getId());
+    //flux.then().block();
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+    //.subscribe(System.out::println);
+  }
 }
