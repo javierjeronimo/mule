@@ -15,7 +15,6 @@ import org.mule.runtime.config.spring.factories.MessageProcessorFilterPairFactor
 import org.mule.runtime.config.spring.factories.QueueProfileFactoryBean;
 import org.mule.runtime.config.spring.factories.ScatterGatherRouterFactoryBean;
 import org.mule.runtime.config.spring.factories.SchedulingMessageSourceFactoryBean;
-import org.mule.runtime.config.spring.factories.SchedulingMessageSourceFactoryBean;
 import org.mule.runtime.config.spring.factories.SubflowMessageProcessorChainFactoryBean;
 import org.mule.runtime.config.spring.factories.TryProcessorFactoryBean;
 import org.mule.runtime.config.spring.parsers.AbstractMuleBeanDefinitionParser;
@@ -157,7 +156,6 @@ import org.mule.runtime.core.security.filters.MuleEncryptionEndpointSecurityFilt
 import org.mule.runtime.core.source.scheduler.schedule.FixedFrequencyScheduler;
 import org.mule.runtime.core.transaction.XaTransactionFactory;
 import org.mule.runtime.core.transaction.lookup.GenericTransactionManagerLookupFactory;
-import org.mule.runtime.core.transaction.lookup.JBossTransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.JRunTransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.Resin3TransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.WeblogicTransactionManagerLookupFactory;
@@ -340,8 +338,6 @@ public class MuleNamespaceHandler extends AbstractMuleNamespaceHandler {
                                  new TransactionManagerDefinitionParser(GenericTransactionManagerLookupFactory.class));
     registerBeanDefinitionParser("weblogic-transaction-manager",
                                  new TransactionManagerDefinitionParser(WeblogicTransactionManagerLookupFactory.class));
-    registerBeanDefinitionParser("jboss-transaction-manager",
-                                 new TransactionManagerDefinitionParser(JBossTransactionManagerLookupFactory.class));
     registerBeanDefinitionParser("jrun-transaction-manager",
                                  new TransactionManagerDefinitionParser(JRunTransactionManagerLookupFactory.class));
     registerBeanDefinitionParser("resin-transaction-manager",

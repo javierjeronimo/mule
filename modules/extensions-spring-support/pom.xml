@@ -57,6 +57,7 @@
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
         </dependency>
+        <!--// TODO(pablo.kraan): JBOSS - is this dependency required?-->
         <dependency>
             <groupId>jboss</groupId>
             <artifactId>javassist</artifactId>

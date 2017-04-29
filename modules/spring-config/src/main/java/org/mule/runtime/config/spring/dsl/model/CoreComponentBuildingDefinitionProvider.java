@@ -209,7 +209,6 @@ import org.mule.runtime.core.transaction.MuleTransactionConfig;
 import org.mule.runtime.core.transaction.TransactionType;
 import org.mule.runtime.core.transaction.XaTransactionFactory;
 import org.mule.runtime.core.transaction.lookup.GenericTransactionManagerLookupFactory;
-import org.mule.runtime.core.transaction.lookup.JBossTransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.JRunTransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.Resin3TransactionManagerLookupFactory;
 import org.mule.runtime.core.transaction.lookup.WeblogicTransactionManagerLookupFactory;
@@ -436,6 +435,7 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withSetterParameterDefinition("propertyName", fromSimpleParameter("propertyName").build())
         .build());
 
+    // TODO(pablo.kraan): JBOSS - what about this transaction managers?
     componentBuildingDefinitions
         // TODO add support for environment
         .add(createTransactionManagerDefinitionBuilder("jndi-transaction-manager", GenericTransactionManagerLookupFactory.class)
@@ -443,9 +443,6 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
     componentBuildingDefinitions
         .add(createTransactionManagerDefinitionBuilder("weblogic-transaction-manager",
                                                        WeblogicTransactionManagerLookupFactory.class).build());
-    componentBuildingDefinitions
-        .add(createTransactionManagerDefinitionBuilder("jboss-transaction-manager", JBossTransactionManagerLookupFactory.class)
-            .build());
     componentBuildingDefinitions
         .add(createTransactionManagerDefinitionBuilder("jrun-transaction-manager", JRunTransactionManagerLookupFactory.class)
             .build());

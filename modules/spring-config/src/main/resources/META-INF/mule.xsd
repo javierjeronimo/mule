@@ -2427,19 +2427,12 @@
         </xsd:complexContent>
     </xsd:complexType>
 
+    <!--// TODO(pablo.kraan): JBOSS - should remove all this elements? -->
     <xsd:element name="websphere-transaction-manager" type="transactionManagerType"
                  substitutionGroup="abstract-transaction-manager">
         <xsd:annotation>
             <xsd:documentation>
                 The WebSphere transaction manager.
-            </xsd:documentation>
-        </xsd:annotation>
-    </xsd:element>
-    <xsd:element name="jboss-transaction-manager" type="transactionManagerType"
-                 substitutionGroup="abstract-transaction-manager">
-        <xsd:annotation>
-            <xsd:documentation>
-                The JBoss transaction manager.
             </xsd:documentation>
         </xsd:annotation>
     </xsd:element>
