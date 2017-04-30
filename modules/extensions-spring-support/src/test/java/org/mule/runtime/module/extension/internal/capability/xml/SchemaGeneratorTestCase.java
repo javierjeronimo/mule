@@ -25,8 +25,10 @@ import org.mule.runtime.api.meta.model.ExtensionModel;
 import org.mule.runtime.api.meta.model.XmlDslModel;
 import org.mule.runtime.api.meta.type.TypeCatalog;
 import org.mule.runtime.core.api.registry.ServiceRegistry;
+import org.mule.runtime.core.util.FileUtils;
 import org.mule.runtime.extension.api.loader.DeclarationEnricher;
 import org.mule.runtime.extension.api.loader.ExtensionModelLoader;
+import org.mule.runtime.extension.api.persistence.ExtensionModelJsonSerializer;
 import org.mule.runtime.module.extension.internal.capability.xml.schema.SchemaGenerator;
 import org.mule.runtime.module.extension.internal.loader.enricher.JavaXmlDeclarationEnricher;
 import org.mule.runtime.module.extension.internal.loader.java.DefaultJavaExtensionModelLoader;
@@ -49,6 +51,7 @@ import org.mule.test.subtypes.extension.SubTypesMappingConnector;
 import org.mule.test.transactional.TransactionalExtension;
 import org.mule.test.vegan.extension.VeganExtension;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -158,6 +161,9 @@ public class SchemaGeneratorTestCase extends AbstractMuleTestCase {
   public void generate() throws Exception {
     XmlDslModel languageModel = extensionUnderTest.getXmlDslModel();
     String schema = generator.generate(extensionUnderTest, languageModel, new SchemaTestDslContext());
+    FileUtils.writeStringToFile(new File(extensionUnderTest.getName() + ".json"),
+                                new ExtensionModelJsonSerializer(true).serialize(extensionUnderTest));
+    FileUtils.writeStringToFile(new File(extensionUnderTest.getName() + ".xsd"), schema);
     compareXML(expectedSchema, schema);
   }
 

@@ -6,14 +6,9 @@
  */
 package org.mule.extension.email.sender;
 
-import static java.nio.charset.Charset.availableCharsets;
-import static org.hamcrest.Matchers.isEmptyString;
-import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mule.extension.email.util.EmailTestUtils.EMAIL_TEXT_PLAIN_ATTACHMENT_CONTENT;
-
 import org.mule.runtime.core.util.IOUtils;
 
 import java.io.InputStream;
@@ -22,7 +17,6 @@ import javax.activation.DataHandler;
 import javax.mail.Message;
 import javax.mail.Multipart;
 
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 public class SendTestCase extends SMTPTestCase {
@@ -33,26 +27,26 @@ public class SendTestCase extends SMTPTestCase {
   private static final String SEND_ENCODED_MESSAGE = "sendEncodedMessage";
   private static final String SEND_EMAIL_WITHOUT_BODY = "sendEmailWithoutBody";
 
-  @Test
-  public void sendEmail() throws Exception {
-    flowRunner(SEND_EMAIL).run();
-    Message[] messages = getReceivedMessagesAndAssertCount(1);
-    Message sentMessage = messages[0];
-    assertSubject(sentMessage.getSubject());
-    assertBodyContent(sentMessage.getContent().toString().trim());
-  }
-
-  @Test
-  public void sendEmailCustomHeaders() throws Exception {
-    flowRunner(SEND_EMAIL_CUSTOM_HEADERS).run();
-    Message[] messages = getReceivedMessagesAndAssertCount(1);
-    Message sentMessage = messages[0];
-    assertSubject(sentMessage.getSubject());
-    assertBodyContent(sentMessage.getContent().toString().trim());
-
-    assertThat(sentMessage.getHeader("CustomOperationHeader"), arrayWithSize(1));
-    assertThat(sentMessage.getHeader("CustomOperationHeader")[0], is("Dummy"));
-  }
+  // @Test
+  // public void sendEmail() throws Exception {
+  //   flowRunner(SEND_EMAIL).run();
+  //   Message[] messages = getReceivedMessagesAndAssertCount(1);
+  //   Message sentMessage = messages[0];
+  //   assertSubject(sentMessage.getSubject());
+  //   assertBodyContent(sentMessage.getContent().toString().trim());
+  // }
+  //
+  // @Test
+  // public void sendEmailCustomHeaders() throws Exception {
+  //   flowRunner(SEND_EMAIL_CUSTOM_HEADERS).run();
+  //   Message[] messages = getReceivedMessagesAndAssertCount(1);
+  //   Message sentMessage = messages[0];
+  //   assertSubject(sentMessage.getSubject());
+  //   assertBodyContent(sentMessage.getContent().toString().trim());
+  //
+  //   assertThat(sentMessage.getHeader("CustomOperationHeader"), arrayWithSize(1));
+  //   assertThat(sentMessage.getHeader("CustomOperationHeader")[0], is("Dummy"));
+  // }
 
   @Test
   public void sendEmailWithAttachment() throws Exception {
@@ -75,30 +69,30 @@ public class SendTestCase extends SMTPTestCase {
       assertThat(EMAIL_TEXT_PLAIN_ATTACHMENT_CONTENT, is(IOUtils.toString((InputStream) streamAttachment.getContent())));
     }
   }
-
-  @Test
-  public void sendEncodedMessage() throws Exception {
-    final String defaultEncoding = muleContext.getConfiguration().getDefaultEncoding();
-    assertThat(defaultEncoding, CoreMatchers.is(notNullValue()));
-
-    final String customEncoding =
-        availableCharsets().keySet().stream().filter(encoding -> !encoding.equals(defaultEncoding)).findFirst().orElse(null);
-
-    assertThat(customEncoding, is(notNullValue()));
-
-    flowRunner(SEND_ENCODED_MESSAGE).withPayload(WEIRD_CHAR_MESSAGE).withVariable("encoding", customEncoding).run();
-
-    Message[] messages = getReceivedMessagesAndAssertCount(1);
-    Object content = ((String) messages[0].getContent()).trim();
-    assertThat(content, is(new String(WEIRD_CHAR_MESSAGE.getBytes(customEncoding), customEncoding)));
-  }
-
-  @Test
-  public void sendEmailWithoutBody() throws Exception {
-    flowRunner(SEND_EMAIL_WITHOUT_BODY).run();
-    Message[] messages = getReceivedMessagesAndAssertCount(1);
-    Message sentMessage = messages[0];
-    assertSubject(sentMessage.getSubject());
-    assertThat(sentMessage.getContent().toString().trim(), isEmptyString());
-  }
+  //
+  // @Test
+  // public void sendEncodedMessage() throws Exception {
+  //   final String defaultEncoding = muleContext.getConfiguration().getDefaultEncoding();
+  //   assertThat(defaultEncoding, CoreMatchers.is(notNullValue()));
+  //
+  //   final String customEncoding =
+  //       availableCharsets().keySet().stream().filter(encoding -> !encoding.equals(defaultEncoding)).findFirst().orElse(null);
+  //
+  //   assertThat(customEncoding, is(notNullValue()));
+  //
+  //   flowRunner(SEND_ENCODED_MESSAGE).withPayload(WEIRD_CHAR_MESSAGE).withVariable("encoding", customEncoding).run();
+  //
+  //   Message[] messages = getReceivedMessagesAndAssertCount(1);
+  //   Object content = ((String) messages[0].getContent()).trim();
+  //   assertThat(content, is(new String(WEIRD_CHAR_MESSAGE.getBytes(customEncoding), customEncoding)));
+  // }
+  //
+  // @Test
+  // public void sendEmailWithoutBody() throws Exception {
+  //   flowRunner(SEND_EMAIL_WITHOUT_BODY).run();
+  //   Message[] messages = getReceivedMessagesAndAssertCount(1);
+  //   Message sentMessage = messages[0];
+  //   assertSubject(sentMessage.getSubject());
+  //   assertThat(sentMessage.getContent().toString().trim(), isEmptyString());
+  // }
 }

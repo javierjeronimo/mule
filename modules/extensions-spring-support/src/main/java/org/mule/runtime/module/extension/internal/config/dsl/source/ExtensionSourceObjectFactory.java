@@ -7,7 +7,6 @@
 package org.mule.runtime.module.extension.internal.config.dsl.source;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
@@ -15,7 +14,6 @@ import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNee
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.lifecycle.InitialisationException;
 import org.mule.runtime.api.meta.model.ExtensionModel;
-import org.mule.runtime.api.meta.model.parameter.ParameterizedModel;
 import org.mule.runtime.api.meta.model.source.SourceCallbackModel;
 import org.mule.runtime.api.meta.model.source.SourceModel;
 import org.mule.runtime.core.api.Event;
@@ -117,8 +115,11 @@ public class ExtensionSourceObjectFactory extends AbstractExtensionObjectFactory
   }
 
   private ResolverSet getCallbackParameters(Optional<SourceCallbackModel> callbackModel) throws ConfigurationException {
-    return parametersResolver.getParametersAsResolverSet(sourceModel, callbackModel.map(ParameterizedModel::getAllParameterModels)
-        .orElse(emptyList()), muleContext);
+    if (callbackModel.isPresent()) {
+      return parametersResolver.getParametersAsResolverSet(callbackModel.get(), muleContext);
+    }
+
+    return new ResolverSet(muleContext);
   }
 
   private SourceAdapterFactory getSourceFactory(ResolverSet nonCallbackParameters,

@@ -26,61 +26,61 @@
 
     <flow name="getEchoMetadata">
         <wsc:consume config-ref="config" operation="echo">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="getNoParams">
         <wsc:consume config-ref="config" operation="noParams">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="getEchoHeadersMetadata">
         <wsc:consume config-ref="config" operation="echoWithHeaders">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="getEchoAccountMetadata">
         <wsc:consume config-ref="config" operation="echoAccount">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
     </flow>
 
     <flow name="downloadAttachment">
         <wsc:consume config-ref="config" operation="downloadAttachment">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="uploadAttachment">
         <wsc:consume config-ref="config" operation="uploadAttachment">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
     </flow>
 
     <flow name="sharedHeader">
         <wsc:consume config-ref="human-resources" operation="Get_Employee">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>

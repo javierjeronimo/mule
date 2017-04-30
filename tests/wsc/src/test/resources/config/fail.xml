@@ -12,9 +12,9 @@
 
     <flow name="failOperation">
         <wsc:consume config-ref="config" operation="fail">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>

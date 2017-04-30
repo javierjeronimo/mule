@@ -14,12 +14,10 @@ import org.mule.runtime.extension.api.annotation.param.Parameter;
 public class VeganProductInformation {
 
   @Parameter
-  @Content(primary = true)
   private TypedValue<String> description;
 
   @Parameter
   @Optional
-  @Content
   private TypedValue<String> brandName;
 
   @Optional

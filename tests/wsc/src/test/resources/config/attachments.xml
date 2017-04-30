@@ -22,20 +22,20 @@
 
     <flow name="downloadAttachment">
         <wsc:consume config-ref="attachmentsConfig" operation="downloadAttachment">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
     </flow>
 
     <flow name="uploadAttachment">
         <wsc:consume config-ref="attachmentsConfig" operation="uploadAttachment">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
                 <wsc:attachments>
                     #[{ attachment: { content: attachmentContent, contentType: mediaType} as Object { class :"org.mule.runtime.extension.api.soap.SoapAttachment" } } ]
                 </wsc:attachments>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>

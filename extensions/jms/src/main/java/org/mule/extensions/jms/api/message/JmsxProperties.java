@@ -129,56 +129,56 @@ public final class JmsxProperties {
   /**
    * @return the JMSXUserID {@link Message} property
    */
-  public String getJMSXUserID() {
+  public String getJmsxUserID() {
     return jmsxUserID;
   }
 
   /**
    * @return the JMSXAppID {@link Message} property
    */
-  public String getJMSXAppID() {
+  public String getJmsxAppID() {
     return jmsxAppID;
   }
 
   /**
    * @return the JMSXDeliveryCount {@link Message} property
    */
-  public int getJMSXDeliveryCount() {
+  public int getJmsxDeliveryCount() {
     return jmsxDeliveryCount;
   }
 
   /**
    * @return the JMSXGroupID {@link Message} property
    */
-  public String getJMSXGroupID() {
+  public String getJmsxGroupID() {
     return jmsxGroupID;
   }
 
   /**
    * @return the JMSXGroupSeq {@link Message} property
    */
-  public int getJMSXGroupSeq() {
+  public int getJmsxGroupSeq() {
     return jmsxGroupSeq;
   }
 
   /**
    * @return the JMSXProducerTXID {@link Message} property
    */
-  public String getJMSXProducerTXID() {
+  public String getJmsxProducerTXID() {
     return jmsxProducerTXID;
   }
 
   /**
    * @return the JMSXConsumerTXID {@link Message} property
    */
-  public String getJMSXConsumerTXID() {
+  public String getJmsxConsumerTXID() {
     return jmsxConsumerTXID;
   }
 
   /**
    * @return the JMSXRcvTimestamp
    */
-  public long getJMSXRcvTimestamp() {
+  public long getJmsxRcvTimestamp() {
     return jmsxRcvTimestamp;
   }
 

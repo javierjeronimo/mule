@@ -246,15 +246,18 @@ public abstract class ExtensionDefinitionParser {
 
         @Override
         public void visitObject(ObjectType objectType) {
+          if (parseAsContent(objectType)) {
+            return;
+          }
+
           if (isMap(objectType)) {
-            if (!(parseAsContent(objectType))) {
-              parseMapParameters(parameter, objectType, paramDsl);
-            }
+            parseMapParameters(parameter, objectType, paramDsl);
             return;
           }
           if (isNestedProcessor(objectType)) {
             parseNestedProcessor(parameter);
           } else {
+
             if (!parsingContext.isRegistered(paramDsl.getElementName(), paramDsl.getPrefix())) {
               parsingContext.registerObjectType(paramDsl.getElementName(), paramDsl.getPrefix(), objectType);
               parseObjectParameter(parameter, paramDsl);
@@ -938,11 +941,11 @@ public abstract class ExtensionDefinitionParser {
     parseParameters(getFlatParameters(inlineGroups, parameterizedModel.getAllParameterModels()));
 
     for (ParameterGroupModel group : inlineGroups) {
-      parseParameterGroup(group);
+      parseInlineParameterGroup(group);
     }
   }
 
-  protected void parseParameterGroup(ParameterGroupModel group) throws ConfigurationException {
+  protected void parseInlineParameterGroup(ParameterGroupModel group) throws ConfigurationException {
     ParameterGroupDescriptor descriptor =
         group.getModelProperty(ParameterGroupModelProperty.class)
             .map(ParameterGroupModelProperty::getDescriptor)
@@ -969,9 +972,15 @@ public abstract class ExtensionDefinitionParser {
   }
 
   protected List<ParameterModel> getFlatParameters(List<ParameterGroupModel> inlineGroups, List<ParameterModel> parameters) {
-    return parameters.stream()
-        .filter(p -> inlineGroups.stream().noneMatch(g -> g.getParameterModels().contains(p)))
-        .collect(toList());
+    List<ParameterModel> inlineParameters = inlineGroups.stream()
+        .flatMap(g -> g.getParameterModels().stream()).collect(toList());
+
+
+    return inlineParameters.isEmpty()
+        ? parameters
+        : parameters.stream()
+            .filter(p -> !inlineParameters.contains(p))
+            .collect(toList());
   }
 
   protected Optional<String> getInfrastructureParameterName(MetadataType fieldType) {

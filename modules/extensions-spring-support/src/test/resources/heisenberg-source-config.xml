@@ -29,6 +29,12 @@
             <heisenberg:next-door address="pollos hermanos" victim="Gustavo Fring">
                 <heisenberg:previous victim="Krazy-8" address="Jesse's"/>
             </heisenberg:next-door>
+            <heisenberg:error-info knownAddresses="#[[]]"/>
+            <heisenberg:success-info age="27">
+                <heisenberg:known-addresses>
+                    <heisenberg:known-address value="success address"/>
+                </heisenberg:known-addresses>
+            </heisenberg:success-info>
         </heisenberg:listen-payments>
 
         <set-payload value="#[mel:java.lang.Long.valueOf('100')]"/>
@@ -39,6 +45,12 @@
             <heisenberg:next-door address="pollos hermanos" victim="Gustavo Fring">
                 <heisenberg:previous victim="Krazy-8" address="Jesse's"/>
             </heisenberg:next-door>
+            <heisenberg:error-info myName="NotHeisenberg" age="20">
+                <heisenberg:known-addresses>
+                    <heisenberg:known-address value="error address"/>
+                </heisenberg:known-addresses>
+            </heisenberg:error-info>
+            <heisenberg:success-info knownAddresses="#[[]]"/>
         </heisenberg:listen-payments>
 
         <!--invalid expression results in exception-->
@@ -47,14 +59,20 @@
 
     <flow name="sourceFailedOnRuntime" initialState="stopped">
         <!--invalid initialBatchNumber with negative value -->
-        <heisenberg:listen-payments config-ref="heisenberg" initialBatchNumber="-1"/>
+        <heisenberg:listen-payments config-ref="heisenberg" initialBatchNumber="-1">
+            <heisenberg:error-info knownAddresses="#[[]]"/>
+            <heisenberg:success-info knownAddresses="#[[]]"/>
+        </heisenberg:listen-payments>
 
         <set-payload value="100"/>
     </flow>
 
     <flow name="sourceFailedOnStart" initialState="stopped">
         <!--invalid corePoolSize with negative value -->
-        <heisenberg:listen-payments config-ref="heisenberg" initialBatchNumber="1" corePoolSize="-1"/>
+        <heisenberg:listen-payments config-ref="heisenberg" initialBatchNumber="1" corePoolSize="-1">
+            <heisenberg:error-info knownAddresses="#[[]]"/>
+            <heisenberg:success-info knownAddresses="#[[]]"/>
+        </heisenberg:listen-payments>
 
         <set-payload value="100"/>
     </flow>

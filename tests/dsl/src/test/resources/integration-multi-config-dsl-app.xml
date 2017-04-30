@@ -79,11 +79,11 @@
         </sockets:send-and-receive>
 
         <wsc:consume operation="GetCitiesByCountry">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
                 <wsc:headers>#[{"headers": {con#headerIn: "Header In Value",con#headerInOut: "Header In Out Value"}]</wsc:headers>
                 <wsc:attachments>#[{}]</wsc:attachments>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
 
     </flow>

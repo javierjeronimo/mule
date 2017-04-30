@@ -27,24 +27,24 @@
 
     <flow name="operationShareInstance">
         <wsc:consume config-ref="single-instance" operation="echo">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[req]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
         <wsc:consume config-ref="single-instance" operation="echo">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[req]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="withLocalWsdlConnection">
         <wsc:consume config-ref="single-instance" operation="echo">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[req]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>

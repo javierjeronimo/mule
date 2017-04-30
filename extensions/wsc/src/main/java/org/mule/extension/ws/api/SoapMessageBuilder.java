@@ -7,6 +7,10 @@
 package org.mule.extension.ws.api;
 
 import org.mule.extension.ws.internal.WebServiceConsumer;
+import org.mule.extension.ws.internal.metadata.SoapAttachmentsTypeResolver;
+import org.mule.extension.ws.internal.metadata.SoapBodyTypeResolver;
+import org.mule.extension.ws.internal.metadata.SoapHeadersTypeResolver;
+import org.mule.runtime.extension.api.annotation.metadata.TypeResolver;
 import org.mule.runtime.extension.api.annotation.param.Content;
 import org.mule.runtime.extension.api.annotation.param.NullSafe;
 import org.mule.runtime.extension.api.annotation.param.Optional;
@@ -28,6 +32,7 @@ public class SoapMessageBuilder {
   @Parameter
   @Optional
   @Content(primary = true)
+  @TypeResolver(SoapBodyTypeResolver.class)
   private String body;
 
   /**
@@ -36,6 +41,7 @@ public class SoapMessageBuilder {
   @Parameter
   @Optional
   @Content
+  @TypeResolver(SoapHeadersTypeResolver.class)
   private String headers;
 
   /**
@@ -45,6 +51,7 @@ public class SoapMessageBuilder {
   @Optional
   @NullSafe
   @Content
+  @TypeResolver(SoapAttachmentsTypeResolver.class)
   private Map<String, SoapAttachment> attachments;
 
   public String getBody() {

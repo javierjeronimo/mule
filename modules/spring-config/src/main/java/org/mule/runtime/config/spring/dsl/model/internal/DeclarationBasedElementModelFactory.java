@@ -15,7 +15,7 @@ import static org.mule.runtime.api.component.ComponentIdentifier.builder;
 import static org.mule.runtime.api.util.Preconditions.checkArgument;
 import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.getAlias;
 import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.isMap;
-import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.isParameterGroup;
+import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.isFlattenedParameterGroup;
 import static org.mule.runtime.extension.api.util.ExtensionModelUtils.getDefaultValue;
 import static org.mule.runtime.extension.api.util.ExtensionModelUtils.isContent;
 import static org.mule.runtime.extension.api.util.ExtensionModelUtils.isInfrastructure;
@@ -802,7 +802,7 @@ class DeclarationBasedElementModelFactory {
                                            DslElementModel.Builder objectElement) {
     List<ObjectFieldType> fields = objectType.getFields()
         .stream()
-        .flatMap(f -> isParameterGroup(f) ? ((ObjectType) f.getValue()).getFields().stream() : of(f))
+        .flatMap(f -> isFlattenedParameterGroup(f) ? ((ObjectType) f.getValue()).getFields().stream() : of(f))
         .collect(toList());
 
     fields.forEach(field -> objectValue.getParameters().entrySet().stream()

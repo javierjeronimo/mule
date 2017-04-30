@@ -417,6 +417,8 @@ public class DefaultXmlArtifactDeclarationLoader implements XmlArtifactDeclarati
             }));
   }
 
+
+
   private void declareInlineGroup(ParameterGroupModel model, DslElementSyntax dsl, ConfigLine config,
                                   ParameterizedBuilder<String, ParameterValue, ?> groupContainer) {
 

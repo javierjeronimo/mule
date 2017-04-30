@@ -9,6 +9,8 @@ package org.mule.extensions.jms.api.message;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.mule.extensions.jms.internal.common.JmsCommons.EXAMPLE_CONTENT_TYPE;
+import static org.mule.extensions.jms.internal.common.JmsCommons.EXAMPLE_ENCODING;
 import static org.mule.extensions.jms.internal.common.JmsCommons.resolveOverride;
 import static org.mule.extensions.jms.internal.message.JMSXDefinedPropertiesNames.JMSX_NAMES;
 import static org.mule.extensions.jms.internal.message.JmsMessageUtils.encodeKey;
@@ -27,9 +29,8 @@ import org.mule.runtime.extension.api.annotation.param.NullSafe;
 import org.mule.runtime.extension.api.annotation.param.Optional;
 import org.mule.runtime.extension.api.annotation.param.Parameter;
 import org.mule.runtime.extension.api.annotation.param.display.DisplayName;
+import org.mule.runtime.extension.api.annotation.param.display.Example;
 import org.mule.runtime.extension.api.annotation.param.display.Summary;
-
-import org.slf4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -39,15 +40,17 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
+import org.slf4j.Logger;
+
 /**
  * Enables the creation of an outgoing {@link Message}.
  * Users must use this builder to create a message instance.
  *
  * @since 4.0
  */
-public class MessageBuilder {
+public class JmsMessageBuilder {
 
-  private static final Logger LOGGER = getLogger(MessageBuilder.class);
+  private static final Logger LOGGER = getLogger(JmsMessageBuilder.class);
   public static final String BODY_CONTENT_TYPE_JMS_PROPERTY = "MM_MESSAGE_CONTENT_TYPE";
   public static final String BODY_ENCODING_JMS_PROPERTY = "MM_MESSAGE_ENCODING";
 
@@ -86,6 +89,7 @@ public class MessageBuilder {
   @Parameter
   @Optional
   @DisplayName("ContentType")
+  @Example(EXAMPLE_CONTENT_TYPE)
   private String contentType;
 
   /**
@@ -93,6 +97,7 @@ public class MessageBuilder {
    */
   @Parameter
   @Optional(defaultValue = "true")
+  @Example(EXAMPLE_ENCODING)
   private boolean sendEncoding;
 
   /**
@@ -153,7 +158,7 @@ public class MessageBuilder {
       setContentTypeProperty(message, body.getDataType());
     }
     if (sendEncoding) {
-      setEncodingProperty(message, body.getDataType(), config.getEncoding());
+      setEncodingProperty(message, body.getDataType(), resolveOverride(config.getEncoding(), encoding));
     }
 
     return message;
@@ -183,7 +188,8 @@ public class MessageBuilder {
 
   private void setContentTypeProperty(Message message, DataType dataType) {
     try {
-      message.setStringProperty(BODY_CONTENT_TYPE_JMS_PROPERTY, dataType.getMediaType().toRfcString());
+      String value = isBlank(contentType) ? dataType.getMediaType().toRfcString() : contentType;
+      message.setStringProperty(BODY_CONTENT_TYPE_JMS_PROPERTY, value);
     } catch (JMSException e) {
       LOGGER.error(format("Unable to set property [%s] of type String: ", BODY_CONTENT_TYPE_JMS_PROPERTY), e);
     }
@@ -200,7 +206,6 @@ public class MessageBuilder {
         .filter(key -> !isBlank(key) && !JMSX_NAMES.contains(key))
         .forEach(key -> setJmsPropertySanitizeKeyIfNecessary(message, key, properties.get(key)));
   }
-
 
   private void setJmsPropertySanitizeKeyIfNecessary(Message msg, String key, Object value) {
     try {
@@ -219,7 +224,6 @@ public class MessageBuilder {
       }
     }
   }
-
 
   private void setJmsTypeHeader(JmsProducerConfig config, Message message) {
     try {

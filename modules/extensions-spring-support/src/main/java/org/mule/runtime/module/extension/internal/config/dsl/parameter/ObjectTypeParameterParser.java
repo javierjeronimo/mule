@@ -6,6 +6,7 @@
  */
 package org.mule.runtime.module.extension.internal.config.dsl.parameter;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptySet;
 import static org.mule.metadata.api.utils.MetadataTypeUtils.getDefaultValue;
 import static org.mule.runtime.dsl.api.component.AttributeDefinition.Builder.fromChildConfiguration;
@@ -16,7 +17,8 @@ import static org.mule.runtime.dsl.api.component.TypeDefinition.fromType;
 import static org.mule.runtime.extension.api.declaration.type.TypeUtils.acceptsReferences;
 import static org.mule.runtime.extension.api.declaration.type.TypeUtils.getExpressionSupport;
 import static org.mule.runtime.extension.api.declaration.type.TypeUtils.isContent;
-import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.isParameterGroup;
+import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.getId;
+import static org.mule.runtime.extension.api.util.ExtensionMetadataTypeUtils.isFlattenedParameterGroup;
 import org.mule.metadata.api.model.ArrayType;
 import org.mule.metadata.api.model.MetadataType;
 import org.mule.metadata.api.model.ObjectFieldType;
@@ -56,7 +58,8 @@ public class ObjectTypeParameterParser extends ExtensionDefinitionParser {
     super(definition, dslResolver, context);
     this.type = type;
     this.classLoader = classLoader;
-    this.typeDsl = dslResolver.resolve(type).orElseThrow(() -> new IllegalArgumentException("Non parseable object"));
+    this.typeDsl = dslResolver.resolve(type)
+        .orElseThrow(() -> new IllegalArgumentException(format("Non parseable object of type [%s]", getId(type))));
     this.name = typeDsl.getElementName();
     this.namespace = typeDsl.getPrefix();
   }
@@ -65,11 +68,14 @@ public class ObjectTypeParameterParser extends ExtensionDefinitionParser {
                                    ClassLoader classLoader,
                                    DslSyntaxResolver dslResolver, ExtensionParsingContext context) {
     super(definition, dslResolver, context);
-    this.type = type;
-    this.classLoader = classLoader;
-    this.typeDsl = dslResolver.resolve(type).orElseThrow(() -> new IllegalArgumentException("Non parseable object"));
     this.name = name;
     this.namespace = namespace;
+    this.type = type;
+    this.classLoader = classLoader;
+    this.typeDsl = dslResolver.resolve(type)
+        .orElseThrow(() -> new IllegalArgumentException(format("Non parseable object [%s:%s] of type [%s]",
+                                                               name, namespace, getId(type))));
+
   }
 
   @Override
@@ -90,9 +96,10 @@ public class ObjectTypeParameterParser extends ExtensionDefinitionParser {
     final Object defaultValue = getDefaultValue(fieldType).orElse(null);
     final ExpressionSupport expressionSupport = getExpressionSupport(objectField);
     Optional<DslElementSyntax> fieldDsl = typeDsl.getContainedElement(fieldName);
-    if (!fieldDsl.isPresent() && !isParameterGroup(objectField)) {
+    if (!fieldDsl.isPresent() && !isFlattenedParameterGroup(objectField)) {
       return;
     }
+
 
     Optional<String> keyName = getInfrastructureParameterName(fieldType);
     if (keyName.isPresent()) {
@@ -136,7 +143,7 @@ public class ObjectTypeParameterParser extends ExtensionDefinitionParser {
           return;
         }
 
-        if (isParameterGroup(objectField)) {
+        if (isFlattenedParameterGroup(objectField)) {
           objectType.getFields().forEach(field -> parseField(field));
           return;
         }

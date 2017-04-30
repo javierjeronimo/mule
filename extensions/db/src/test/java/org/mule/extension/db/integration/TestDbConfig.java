@@ -26,8 +26,8 @@ public class TestDbConfig {
     List<Object[]> result = new ArrayList<>();
 
     result.addAll(getDerbyResource());
-    result.addAll(getMySqlResource());
-    result.addAll(getOracleResource());
+    // result.addAll(getMySqlResource());
+    // result.addAll(getOracleResource());
 
     return result;
   }

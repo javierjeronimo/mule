@@ -13,25 +13,25 @@
 
     <flow name="echoOperation">
         <wsc:consume config-ref="config" operation="echo">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="echoAccountOperation">
         <wsc:consume config-ref="config" operation="echoAccount">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>#[payload]</wsc:body>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
 
     <flow name="echoWithHeadersOperation">
         <wsc:consume config-ref="config" operation="echoWithHeaders">
-            <wsc:message>
+            <wsc:soap-message>
                 <wsc:body>
                 #[
                 %dw 2.0
@@ -53,7 +53,7 @@
                     con#headerInOut: "Header In Out Value"
                 }]
                 </wsc:headers>
-            </wsc:message>
+            </wsc:soap-message>
         </wsc:consume>
         <object-to-string-transformer/>
     </flow>
