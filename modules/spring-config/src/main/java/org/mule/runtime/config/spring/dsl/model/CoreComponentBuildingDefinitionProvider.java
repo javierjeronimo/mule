@@ -435,7 +435,6 @@ public class CoreComponentBuildingDefinitionProvider implements ComponentBuildin
         .withSetterParameterDefinition("propertyName", fromSimpleParameter("propertyName").build())
         .build());
 
-    // TODO(pablo.kraan): JBOSS - what about this transaction managers?
     componentBuildingDefinitions
         // TODO add support for environment
         .add(createTransactionManagerDefinitionBuilder("jndi-transaction-manager", GenericTransactionManagerLookupFactory.class)

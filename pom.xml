@@ -1171,7 +1171,6 @@
                 <version>${asmVersion}</version>
             </dependency>
 
-            <!--// TODO(pablo.kraan): JBOSS - is this used? -->
             <dependency>
                 <groupId>jboss</groupId>
                 <artifactId>javassist</artifactId>
