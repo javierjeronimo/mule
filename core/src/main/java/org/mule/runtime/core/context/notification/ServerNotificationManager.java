@@ -9,7 +9,6 @@ package org.mule.runtime.core.context.notification;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 import static org.slf4j.LoggerFactory.getLogger;
-
 import org.mule.runtime.api.lifecycle.Disposable;
 import org.mule.runtime.api.lifecycle.Initialisable;
 import org.mule.runtime.api.lifecycle.InitialisationException;
@@ -22,13 +21,13 @@ import org.mule.runtime.core.api.context.notification.ServerNotificationListener
 import org.mule.runtime.core.api.context.notification.SynchronousServerEvent;
 import org.mule.runtime.core.util.ClassUtils;
 
+import org.slf4j.Logger;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.slf4j.Logger;
 
 /**
  * A reworking of the event manager that allows efficient behaviour without global on/off switches in the config.

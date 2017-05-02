@@ -12,6 +12,7 @@ import org.mule.runtime.api.lifecycle.Initialisable;
 import org.mule.runtime.api.lifecycle.InitialisationException;
 import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.TypedValue;
+import org.mule.runtime.api.streaming.CursorProvider;
 import org.mule.runtime.core.api.Event;
 import org.mule.runtime.core.api.TransformationService;
 
@@ -26,9 +27,7 @@ import javax.inject.Inject;
  * @param <T>
  * @since 4.0
  */
-public class ExpressionTypedValueValueResolver<T> extends ExpressionValueResolver<TypedValue<T>> implements Initialisable
-
-{
+public class ExpressionTypedValueValueResolver<T> extends ExpressionValueResolver<TypedValue<T>> implements Initialisable {
 
   private final Class<T> expectedClass;
   private TypeSafeTransformer typeSafeTransformer;
@@ -37,7 +36,7 @@ public class ExpressionTypedValueValueResolver<T> extends ExpressionValueResolve
   private TransformationService transformationService;
 
   public ExpressionTypedValueValueResolver(String expression, Class<T> expectedClass) {
-    super(expression);
+    super(expression, DataType.fromType(expectedClass));
     this.expectedClass = expectedClass;
   }
 
@@ -45,14 +44,19 @@ public class ExpressionTypedValueValueResolver<T> extends ExpressionValueResolve
   public TypedValue<T> resolve(Event event) throws MuleException {
     initEvaluator();
 
-    TypedValue typedValue = evaluator.resolveTypedValue(event, Event.builder(event));
+    TypedValue typedValue = evaluator.resolveTypedValue(event);
     if (isInstance(expectedClass, typedValue.getValue())) {
+      if (expectedClass.equals(Object.class) && typedValue.getValue() instanceof CursorProvider) {
+        return new TypedValue<T>((T) ((CursorProvider) typedValue.getValue()).openCursor(), typedValue.getDataType());
+      }
       return typedValue;
     } else {
       DataType expectedDataType =
-          DataType.builder().type(expectedClass).mediaType(typedValue.getDataType().getMediaType()).build();
-      return new TypedValue<>((T) typeSafeTransformer.transform(typedValue.getValue(), typedValue.getDataType(), expectedDataType,
-                                                                event),
+          DataType.builder()
+              .type(expectedClass)
+              .mediaType(typedValue.getDataType().getMediaType())
+              .build();
+      return new TypedValue<>(typeSafeTransformer.<T>transform(typedValue.getValue(), typedValue.getDataType(), expectedDataType),
                               expectedDataType);
     }
   }

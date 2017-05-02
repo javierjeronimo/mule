@@ -10,18 +10,18 @@ import static java.lang.String.format;
 import static org.mule.extensions.jms.internal.common.JmsCommons.createJmsSession;
 import static org.mule.extensions.jms.internal.config.InternalAckMode.AUTO;
 import static org.slf4j.LoggerFactory.getLogger;
-import org.mule.extensions.jms.internal.connection.session.JmsSessionManager;
-import org.mule.extensions.jms.internal.config.JmsConfig;
 import org.mule.extensions.jms.api.config.JmsProducerConfig;
-import org.mule.extensions.jms.internal.connection.JmsConnection;
-import org.mule.extensions.jms.internal.connection.JmsSession;
-import org.mule.extensions.jms.internal.connection.JmsTransactionalConnection;
 import org.mule.extensions.jms.api.destination.DestinationType;
 import org.mule.extensions.jms.api.exception.JmsExtensionException;
 import org.mule.extensions.jms.api.exception.JmsPublishException;
 import org.mule.extensions.jms.api.exception.JmsPublisherErrorTypeProvider;
 import org.mule.extensions.jms.api.message.MessageBuilder;
 import org.mule.extensions.jms.api.publish.JmsPublishParameters;
+import org.mule.extensions.jms.internal.config.JmsConfig;
+import org.mule.extensions.jms.internal.connection.JmsConnection;
+import org.mule.extensions.jms.internal.connection.JmsSession;
+import org.mule.extensions.jms.internal.connection.JmsTransactionalConnection;
+import org.mule.extensions.jms.internal.connection.session.JmsSessionManager;
 import org.mule.runtime.extension.api.annotation.dsl.xml.XmlHints;
 import org.mule.runtime.extension.api.annotation.error.Throws;
 import org.mule.runtime.extension.api.annotation.param.Config;
@@ -32,6 +32,9 @@ import org.mule.runtime.extension.api.annotation.param.ParameterGroup;
 import org.mule.runtime.extension.api.annotation.param.display.Summary;
 
 import org.slf4j.Logger;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import javax.inject.Inject;
 import javax.jms.DeliveryMode;
@@ -103,5 +106,9 @@ public final class JmsPublish {
       LOGGER.error(format("An error occurred while sending a message to [%s]: ", destination), e);
       throw new JmsPublishException(format("An error occurred while sending a message to [%s]: ", destination), e);
     }
+  }
+
+  public InputStream getIs(String message){
+    return new ByteArrayInputStream(message.getBytes());
   }
 }

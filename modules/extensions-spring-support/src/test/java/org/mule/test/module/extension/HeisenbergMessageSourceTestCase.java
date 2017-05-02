@@ -15,12 +15,12 @@ import org.mule.tck.probe.PollingProber;
 import org.mule.test.heisenberg.extension.HeisenbergExtension;
 import org.mule.test.heisenberg.extension.HeisenbergSource;
 
-import java.math.BigDecimal;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import java.math.BigDecimal;
 
 public class HeisenbergMessageSourceTestCase extends AbstractExtensionFunctionalTestCase {
 
@@ -57,8 +57,7 @@ public class HeisenbergMessageSourceTestCase extends AbstractExtensionFunctional
     HeisenbergExtension heisenberg = locateConfig();
 
     new PollingProber(TIMEOUT_MILLIS, POLL_DELAY_MILLIS)
-        .check(new JUnitLambdaProbe(() -> HeisenbergSource.receivedGroupOnSource
-            && heisenberg.getMoney().longValue() == -1));
+        .check(new JUnitLambdaProbe(() -> HeisenbergSource.receivedGroupOnSource && heisenberg.getMoney().longValue() == -1));
   }
 
   @Test

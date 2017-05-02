@@ -6,14 +6,6 @@
  */
 package org.mule.runtime.core.el;
 
-import static org.mule.runtime.api.el.BindingContext.builder;
-import static org.mule.runtime.api.metadata.DataType.BYTE_ARRAY;
-import static org.mule.runtime.api.metadata.DataType.OBJECT;
-import static org.mule.runtime.api.metadata.DataType.STRING;
-import static org.mule.runtime.api.metadata.DataType.fromFunction;
-import static org.mule.runtime.api.metadata.DataType.fromType;
-import static org.mule.test.allure.AllureConstants.ExpressionLanguageFeature.EXPRESSION_LANGUAGE;
-import static org.mule.test.allure.AllureConstants.ExpressionLanguageFeature.ExpressionLanguageStory.SUPPORT_MVEL_DW;
 import static java.util.Arrays.asList;
 import static java.util.Optional.of;
 import static org.hamcrest.Matchers.equalTo;
@@ -24,7 +16,14 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
+import static org.mule.runtime.api.el.BindingContext.builder;
+import static org.mule.runtime.api.metadata.DataType.BYTE_ARRAY;
+import static org.mule.runtime.api.metadata.DataType.OBJECT;
+import static org.mule.runtime.api.metadata.DataType.STRING;
+import static org.mule.runtime.api.metadata.DataType.fromFunction;
+import static org.mule.runtime.api.metadata.DataType.fromType;
+import static org.mule.test.allure.AllureConstants.ExpressionLanguageFeature.EXPRESSION_LANGUAGE;
+import static org.mule.test.allure.AllureConstants.ExpressionLanguageFeature.ExpressionLanguageStory.SUPPORT_MVEL_DW;
 import org.mule.runtime.api.el.BindingContext;
 import org.mule.runtime.api.el.ExpressionFunction;
 import org.mule.runtime.api.exception.MuleException;
@@ -36,10 +35,6 @@ import org.mule.runtime.core.api.construct.FlowConstruct;
 import org.mule.runtime.core.api.el.ExtendedExpressionManager;
 import org.mule.tck.junit4.AbstractMuleContextTestCase;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,6 +42,10 @@ import org.junit.rules.ExpectedException;
 import ru.yandex.qatools.allure.annotations.Description;
 import ru.yandex.qatools.allure.annotations.Features;
 import ru.yandex.qatools.allure.annotations.Stories;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Features(EXPRESSION_LANGUAGE)
 @Stories(SUPPORT_MVEL_DW)
@@ -89,8 +88,8 @@ public class DefaultExpressionManagerTestCase extends AbstractMuleContextTestCas
     };
 
     BindingContext globalContext = builder()
-        .addBinding("aNum", new TypedValue(4, fromType(Integer.class)))
-        .addBinding("times", new TypedValue(multiply, fromFunction(multiply)))
+        .addBinding("aNum", new TypedValue<>(4, fromType(Integer.class)))
+        .addBinding("times", new TypedValue<>(multiply, fromFunction(multiply)))
         .build();
 
     expressionManager.addGlobalBindings(globalContext);

@@ -12,6 +12,7 @@ import static org.mule.runtime.api.el.ValidationResult.success;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import static org.mule.runtime.api.metadata.DataType.STRING;
 import static org.mule.runtime.core.api.config.MuleProperties.OBJECT_EXPRESSION_LANGUAGE;
+import static org.mule.runtime.core.util.ClassUtils.isInstance;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.runtime.api.el.BindingContext;
 import org.mule.runtime.api.el.DefaultValidationResult;
@@ -32,13 +33,13 @@ import org.mule.runtime.core.api.transformer.TransformerException;
 import org.mule.runtime.core.el.mvel.MVELExpressionLanguage;
 import org.mule.runtime.core.util.TemplateParser;
 
+import org.slf4j.Logger;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.inject.Inject;
-
-import org.slf4j.Logger;
 
 public class DefaultExpressionManager implements ExtendedExpressionManager, Initialisable {
 
@@ -132,28 +133,23 @@ public class DefaultExpressionManager implements ExtendedExpressionManager, Init
 
   @Override
   public TypedValue evaluate(String expression, DataType outputType, BindingContext context, Event event) {
-    TypedValue result = expressionLanguage.evaluate(expression, outputType, event, context);
-    DataType sourceType = result.getDataType();
-    try {
-      return transform(result, sourceType, outputType);
-    } catch (TransformerException e) {
-      throw new ExpressionRuntimeException(createStaticMessage(
-                                                               format("Failed to apply implicit transformation from type %s to %s",
-                                                                      sourceType, outputType),
-                                                               e));
-    }
+    return evaluate(expression, outputType, context, event, null, false);
   }
 
   @Override
-  public TypedValue evaluate(String expression, DataType expectedOutputType, BindingContext context, Event event,
-                             FlowConstruct flowConstruct)
+  public TypedValue evaluate(String expression, DataType outputType, BindingContext context, Event event,
+                             FlowConstruct flowConstruct, boolean failOnNull)
       throws ExpressionRuntimeException {
-    return expressionLanguage.evaluate(expression, expectedOutputType, event, flowConstruct, context);
+    return expressionLanguage.evaluate(expression, outputType, event, flowConstruct, context, failOnNull);
   }
 
   private TypedValue transform(TypedValue target, DataType sourceType, DataType outputType) throws TransformerException {
-    Object result = muleContext.getRegistry().lookupTransformer(sourceType, outputType).transform(target.getValue());
-    return new TypedValue<>(result, outputType);
+    if (!isInstance(outputType.getType(), target.getValue()) && target.getValue() != null) {
+      Object result = muleContext.getRegistry().lookupTransformer(sourceType, outputType).transform(target.getValue());
+      return new TypedValue<>(result, outputType);
+    } else {
+      return target;
+    }
   }
 
   @Override
@@ -176,7 +172,7 @@ public class DefaultExpressionManager implements ExtendedExpressionManager, Init
   public boolean evaluateBoolean(String expression, Event event, FlowConstruct flowConstruct, boolean nullReturnsTrue,
                                  boolean nonBooleanReturnsTrue)
       throws ExpressionRuntimeException {
-    return resolveBoolean(evaluate(expression, DataType.BOOLEAN, BindingContext.builder().build(), event, flowConstruct)
+    return resolveBoolean(evaluate(expression, DataType.BOOLEAN, BindingContext.builder().build(), event, flowConstruct, false)
         .getValue(), nullReturnsTrue,
                           nonBooleanReturnsTrue, expression);
   }
@@ -306,6 +302,4 @@ public class DefaultExpressionManager implements ExtendedExpressionManager, Init
   private boolean hasMelExpression(String expression) {
     return expression.contains(DEFAULT_EXPRESSION_PREFIX + MEL_PREFIX + PREFIX_EXPR_SEPARATOR);
   }
-
-
 }

@@ -56,10 +56,14 @@ public class TypeSafeValueResolverWrapper<T> implements ValueResolver<T>, Initia
     TypeSafeTransformer typeSafeTransformer = new TypeSafeTransformer(transformationService);
     resolver = (event -> {
       Object resolvedValue = valueResolverDelegate.resolve(event);
+
+      //      if (resolvedValue instanceof CursorProvider<?>) {
+      //        resolvedValue = ((CursorProvider) resolvedValue).openCursor();
+      //      }
+
       return isInstance(expectedType, resolvedValue)
           ? (T) resolvedValue
-          : (T) typeSafeTransformer.transform(resolvedValue, DataType.fromObject(resolvedValue), DataType.fromType(expectedType),
-                                              event);
+          : (T) typeSafeTransformer.transform(resolvedValue, DataType.fromObject(resolvedValue), DataType.fromType(expectedType));
     });
 
     if (!valueResolverDelegate.isDynamic()) {

@@ -28,6 +28,11 @@ import org.mule.test.heisenberg.extension.model.KnockeableDoor;
 import org.mule.test.heisenberg.extension.model.Ricin;
 import org.mule.test.runner.RunnerDelegateTo;
 
+import org.junit.Test;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -37,11 +42,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.junit.Test;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 
 @RunnerDelegateTo(Parameterized.class)
 public class ParameterizedConfigParserTestCase extends AbstractConfigParserTestCase {
@@ -77,6 +77,11 @@ public class ParameterizedConfigParserTestCase extends AbstractConfigParserTestC
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][] {{HEISENBERG_BYNAME}, {HEISENBERG_PLACEHOLDERS}, {HEISENBERG_BYREF},
         {HEISENBERG_EXPRESSION}, {HEISENBERG_EXPRESSION_BYREF}});
+  }
+
+  @Override
+  protected boolean isDisposeContextPerClass() {
+    return false;
   }
 
   @Parameter(0)

@@ -17,15 +17,15 @@ import org.mule.test.heisenberg.extension.model.DifferedKnockableDoor;
 import org.mule.test.typed.value.extension.extension.TypedValueSource;
 import org.mule.test.vegan.extension.VeganProductInformation;
 
+import org.junit.After;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.junit.After;
-import org.junit.Test;
 
 public class TypedValueParameterOperationExecutionTestCase extends AbstractTypedValueTestCase {
 
@@ -41,7 +41,7 @@ public class TypedValueParameterOperationExecutionTestCase extends AbstractTyped
 
   @Test
   public void typedValueForString() throws Exception {
-    runAndAssertTypedValue("typedValueForString", "This is a string", MediaType.APPLICATION_JSON, UTF8);
+    runAndAssertTypedValue("typedValueForString", "This is a string", APPLICATION_JSON, UTF8);
   }
 
   @Test
@@ -72,7 +72,7 @@ public class TypedValueParameterOperationExecutionTestCase extends AbstractTyped
 
   @Test
   public void typedValueForStringMap() throws Exception {
-    HashMap<Object, Object> map = new HashMap<>();
+    HashMap<Object, Object> map = new LinkedHashMap<>();
     map.put("string", "string");
     runAndAssertTypedValue("typedValueForStringMap", map, APPLICATION_JAVA, UTF8);
   }
@@ -115,14 +115,14 @@ public class TypedValueParameterOperationExecutionTestCase extends AbstractTyped
     Flow flow = (Flow) getFlowConstruct("typedValueForStringOnSourceOnSuccess");
     flow.start();
     new PollingProber(RECEIVE_TIMEOUT, 100).check(new JUnitLambdaProbe(() -> TypedValueSource.onSuccessValue != null));
-    assertTypedValue(TypedValueSource.onSuccessValue, "string", MediaType.APPLICATION_JSON, UTF8);
+    assertTypedValue(TypedValueSource.onSuccessValue, "string", APPLICATION_JSON, UTF8);
   }
 
   @Test
   public void typedValueForStringInsidePojo() throws Exception {
     Event event = flowRunner("typedValueForStringInsidePojo").run();
     DifferedKnockableDoor value = (DifferedKnockableDoor) event.getMessage().getPayload().getValue();
-    assertTypedValue(value.getAddress(), "string", MediaType.APPLICATION_JSON, UTF8);
+    assertTypedValue(value.getAddress(), "string", APPLICATION_JSON, UTF8);
   }
 
   @Test

@@ -14,8 +14,10 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mule.runtime.api.metadata.DataType.OBJECT;
 import static org.mule.runtime.api.metadata.DataType.fromObject;
-
+import org.mule.runtime.api.el.BindingContext;
+import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.TypedValue;
 import org.mule.runtime.core.api.Event;
 import org.mule.runtime.core.api.el.ExtendedExpressionManager;
@@ -25,7 +27,7 @@ import org.mule.tck.size.SmallTest;
 import org.junit.Test;
 
 @SmallTest
-public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
+public class MELAttributeEvaluatorTestCase extends AbstractMuleTestCase {
 
   private ExtendedExpressionManager mockExpressionManager = mock(ExtendedExpressionManager.class);
   private Event mockMuleEvent = mock(Event.class);
@@ -98,7 +100,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
     attributeEvaluator.initialize(mockExpressionManager);
     final String expectedValue = "hi";
     Object value = new StringBuilder(expectedValue);
-    doReturn(new TypedValue<>(value, fromObject(value))).when(mockExpressionManager).evaluate(anyString(), any(Event.class));
+    doReturn(new TypedValue<>(value, fromObject(value)))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     assertThat(attributeEvaluator.resolveStringValue(mockMuleEvent), is(expectedValue));
   }
 
@@ -107,8 +111,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
     AttributeEvaluator attributeEvaluator = new AttributeEvaluator("#[mel:expression]");
     attributeEvaluator.initialize(mockExpressionManager);
     final String expectedValue = "123";
-    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue))).when(mockExpressionManager).evaluate(anyString(),
-                                                                                                              any(Event.class));
+    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue)))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     assertThat(attributeEvaluator.resolveIntegerValue(mockMuleEvent), is(Integer.parseInt(expectedValue)));
   }
 
@@ -117,8 +122,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
     AttributeEvaluator attributeEvaluator = new AttributeEvaluator("#[mel:expression]");
     attributeEvaluator.initialize(mockExpressionManager);
     final long expectedValue = 1234l;
-    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue))).when(mockExpressionManager).evaluate(anyString(),
-                                                                                                              any(Event.class));
+    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue)))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     assertThat(attributeEvaluator.resolveIntegerValue(mockMuleEvent), is((int) expectedValue));
   }
 
@@ -127,8 +133,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
     AttributeEvaluator attributeEvaluator = new AttributeEvaluator("#[mel:expression]");
     attributeEvaluator.initialize(mockExpressionManager);
     final String expectedValue = "true";
-    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue))).when(mockExpressionManager).evaluate(anyString(),
-                                                                                                              any(Event.class));
+    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue)))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     assertThat(attributeEvaluator.resolveBooleanValue(mockMuleEvent), is(Boolean.valueOf(expectedValue)));
   }
 
@@ -137,8 +144,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
     AttributeEvaluator attributeEvaluator = new AttributeEvaluator("#[mel:expression]");
     attributeEvaluator.initialize(mockExpressionManager);
     final Boolean expectedValue = true;
-    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue))).when(mockExpressionManager).evaluate(anyString(),
-                                                                                                              any(Event.class));
+    doReturn(new TypedValue<>(expectedValue, fromObject(expectedValue)))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     assertThat(attributeEvaluator.resolveBooleanValue(mockMuleEvent), is(Boolean.valueOf(expectedValue)));
   }
 
@@ -146,7 +154,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
   public void resolveIntegerWithNoNumericValue() {
     AttributeEvaluator attributeEvaluator = new AttributeEvaluator("#[mel:expression]");
     attributeEvaluator.initialize(mockExpressionManager);
-    doReturn(new TypedValue<>("abcd", fromObject("abcd"))).when(mockExpressionManager).evaluate(anyString(), any(Event.class));
+    doReturn(new TypedValue<>("abcd", fromObject("abcd")))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     attributeEvaluator.resolveIntegerValue(mockMuleEvent);
   }
 
@@ -154,6 +164,9 @@ public class AttributeEvaluatorTestCase extends AbstractMuleTestCase {
   public void nullAttributeValue() {
     final AttributeEvaluator nullAttributeEvaluator = new AttributeEvaluator(null);
     nullAttributeEvaluator.initialize(mockExpressionManager);
+    doReturn(new TypedValue<>(null, OBJECT))
+        .when(mockExpressionManager)
+        .evaluate(anyString(), any(DataType.class), any(BindingContext.class), any(Event.class));
     assertThat(nullAttributeEvaluator.isExpression(), is(false));
     assertThat(nullAttributeEvaluator.isParseExpression(), is(false));
     assertThat(nullAttributeEvaluator.resolveValue(mockMuleEvent), nullValue());

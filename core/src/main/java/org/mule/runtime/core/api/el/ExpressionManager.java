@@ -139,11 +139,12 @@ public interface ExpressionManager extends MuleExpressionLanguage {
    * @param context an expression binding context to consider
    * @param event the current event to consider
    * @param flowConstruct the flow where the event is being processed
+   * @param failOnNull
    * @return the result of the expression plus its type
    * @throws ExpressionRuntimeException if a problem occurs evaluating the expression or during transformation
    */
   TypedValue evaluate(String expression, DataType expectedOutputType, BindingContext context, Event event,
-                      FlowConstruct flowConstruct)
+                      FlowConstruct flowConstruct, boolean failOnNull)
       throws ExpressionRuntimeException;
 
   /**

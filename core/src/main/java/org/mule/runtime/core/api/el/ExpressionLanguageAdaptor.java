@@ -79,11 +79,12 @@ public interface ExpressionLanguageAdaptor {
    * @param event the current event being processed
    * @param flowConstruct the flow where the event is being processed
    * @param context the bindings to consider
+   * @param failOnNull
    * @return the result of execution of the expression.
    * @throws ExpressionRuntimeException if a problem occurs evaluating the expression
    */
   TypedValue evaluate(String expression, DataType expectedOutputType, Event event, FlowConstruct flowConstruct,
-                      BindingContext context)
+                      BindingContext context, boolean failOnNull)
       throws ExpressionRuntimeException;
 
   /**

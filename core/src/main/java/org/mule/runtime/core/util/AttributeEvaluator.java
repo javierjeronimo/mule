@@ -7,6 +7,10 @@
 package org.mule.runtime.core.util;
 
 import static java.util.regex.Pattern.DOTALL;
+import static org.mule.runtime.api.metadata.DataType.BOOLEAN;
+import static org.mule.runtime.api.metadata.DataType.OBJECT;
+import static org.mule.runtime.api.metadata.DataType.STRING;
+import org.mule.runtime.api.el.BindingContext;
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.metadata.DataType;
 import org.mule.runtime.api.metadata.TypedValue;
@@ -14,31 +18,87 @@ import org.mule.runtime.core.api.Event;
 import org.mule.runtime.core.api.el.ExtendedExpressionManager;
 import org.mule.runtime.core.config.i18n.CoreMessages;
 
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 /**
- * This class acts as a wrapper for configuration attributes that support simple text, expression or regular expressions. It can
- * be extended to support other cases too.
+ * This class acts as a wrapper for configuration attributes that support simple text, expression or regular expressions.
+ * It can be extended to support other cases too.
  */
 public class AttributeEvaluator {
 
-  private static final Pattern SINGLE_EXPRESSION_REGEX_PATTERN = Pattern.compile("^#\\[(?:(?!#\\[).)*\\]$", DOTALL);
-
-  private enum AttributeType {
-    EXPRESSION, PARSE_EXPRESSION, STATIC_VALUE
-  }
-
-  private final String attributeValue;
+  private static final Pattern SINGLE_EXPRESSION_REGEX_PATTERN = Pattern.compile("^#\\[(?:(?!#\\[).)*]$", DOTALL);
+  private static final BindingContext NULL_BINDING_CONTEXT = BindingContext.builder().build();
+  private static final List<Class<?>> blackListTypes = Arrays.asList(Object.class, InputStream.class);
+  public static final DataType INTEGER = DataType.fromType(Integer.class);
+  private String attributeValue;
   private ExtendedExpressionManager expressionManager;
   private AttributeType attributeType;
+  private Function<Event, TypedValue> expressionResolver;
+  private Function<Event, String> parseResolver;
 
+  /**
+   * Creates a new Attribute Evaluator instance with a given attribute value
+   *
+   * @param attributeValue the value for an attribute, this value can be treated as {@link AttributeType#EXPRESSION},
+   *                       {@link AttributeType#PARSE_EXPRESSION} or as a {@link AttributeType#STATIC_VALUE}
+   */
   public AttributeEvaluator(String attributeValue) {
+    this(attributeValue, null);
+  }
+
+  /**
+   * Creates a new Attribute Evaluator instance with a given attribute value and the expected {@link DataType}
+   *
+   * @param attributeValue the value for an attribute, this value can be treated as {@link AttributeType#EXPRESSION},
+   *                       {@link AttributeType#PARSE_EXPRESSION} or as a {@link AttributeType#STATIC_VALUE}
+   * @param expectedDataType specifies that the expression should be evaluated a coerced to the given expected {@link DataType}.
+   *                         This value will be ignored for {@link AttributeType#PARSE_EXPRESSION} and {@link AttributeType#STATIC_VALUE}
+   */
+  public AttributeEvaluator(String attributeValue, DataType expectedDataType) {
     this.attributeValue = sanitize(attributeValue);
+    resolveAttributeType();
+
+    switch (attributeType) {
+      case EXPRESSION:
+        configureExpressionAttribute(expectedDataType);
+        break;
+      case PARSE_EXPRESSION:
+        configureParseAttribute();
+        break;
+      case STATIC_VALUE:
+        configureStaticAttribute();
+    }
+  }
+
+  private void configureStaticAttribute() {
+    parseResolver = (event -> this.attributeValue);
+    expressionResolver = (event -> new TypedValue<>(this.attributeValue, this.attributeValue == null ? OBJECT : STRING));
+  }
+
+  private void configureParseAttribute() {
+    parseResolver = (event -> expressionManager.parse(this.attributeValue, event, null));
+    expressionResolver = (event -> new TypedValue<>(parseResolver.apply(event), STRING));
+  }
+
+  private void configureExpressionAttribute(DataType expectedDataType) {
+    if (expectedDataType != null && !blackListTypes.contains(expectedDataType.getType())) {
+      expressionResolver =
+          (event -> expressionManager.evaluate(this.attributeValue, expectedDataType, NULL_BINDING_CONTEXT, event));
+    } else {
+      expressionResolver = (event -> expressionManager.evaluate(this.attributeValue, event));
+      if (expectedDataType != null
+          && (expectedDataType.getType().equals(Object.class) || expectedDataType.getType().equals(InputStream.class))) {
+        expressionResolver = new CursorOpener(expressionResolver);
+      }
+    }
   }
 
   public AttributeEvaluator initialize(final ExtendedExpressionManager expressionManager) {
     this.expressionManager = expressionManager;
-    resolveAttributeType();
     return this;
   }
 
@@ -77,34 +137,23 @@ public class AttributeEvaluator {
     return attributeType.equals(AttributeType.PARSE_EXPRESSION);
   }
 
-  public TypedValue resolveTypedValue(Event event, Event.Builder eventBuilder) {
-    if (isExpression()) {
-      return expressionManager.evaluate(attributeValue, event, eventBuilder, null);
-    } else if (isParseExpression()) {
-      final String value = expressionManager.parse(attributeValue, event, null);
-      return new TypedValue(value, DataType.builder().type(String.class).build());
-    } else {
-      Class<?> type = attributeValue == null ? Object.class : String.class;
-      return new TypedValue(attributeValue, DataType.builder().type(type).build());
-    }
+  public TypedValue resolveTypedValue(Event event) {
+    return expressionResolver.apply(event);
   }
 
   public Object resolveValue(Event event) {
-    if (isExpression()) {
-      return expressionManager.evaluate(attributeValue, event).getValue();
-    } else if (isParseExpression()) {
-      return expressionManager.parse(attributeValue, event, null);
-    } else {
-      return attributeValue;
-    }
+    return resolveTypedValue(event).getValue();
+  }
+
+  private TypedValue resolveValue(Event event, DataType expectedDataType) {
+    return expressionManager.evaluate(this.attributeValue, expectedDataType, NULL_BINDING_CONTEXT, event);
   }
 
   public Integer resolveIntegerValue(Event event) {
-    final Object value = resolveValue(event);
+    Object value = resolveValue(event, INTEGER).getValue();
     if (value == null) {
       return null;
-    }
-    if (value instanceof Number) {
+    } else if (value instanceof Number) {
       return ((Number) value).intValue();
     } else if (value instanceof String) {
       return Integer.parseInt((String) value);
@@ -115,7 +164,7 @@ public class AttributeEvaluator {
   }
 
   public String resolveStringValue(Event event) {
-    final Object value = resolveValue(event);
+    Object value = resolveValue(event, STRING).getValue();
     if (value == null) {
       return null;
     }
@@ -123,7 +172,7 @@ public class AttributeEvaluator {
   }
 
   public Boolean resolveBooleanValue(Event event) {
-    final Object value = resolveValue(event);
+    final Object value = resolveValue(event, BOOLEAN).getValue();
     if (value == null || value instanceof Boolean) {
       return (Boolean) value;
     }
@@ -132,5 +181,28 @@ public class AttributeEvaluator {
 
   public String getRawValue() {
     return attributeValue;
+  }
+
+  private class CursorOpener implements Function<Event, TypedValue> {
+
+    private Function<Event, TypedValue> delegate;
+
+    CursorOpener(Function<Event, TypedValue> delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public TypedValue apply(Event event) {
+      TypedValue resolve = delegate.apply(event);
+
+      //      if (resolve.getValue() instanceof CursorProvider) {
+      //        resolve = new TypedValue<>(((CursorProvider) resolve.getValue()).openCursor(), resolve.getDataType());
+      //      }
+      return resolve;
+    }
+  }
+
+  private enum AttributeType {
+    EXPRESSION, PARSE_EXPRESSION, STATIC_VALUE
   }
 }

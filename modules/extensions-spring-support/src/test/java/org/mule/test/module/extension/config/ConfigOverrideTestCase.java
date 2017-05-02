@@ -20,12 +20,17 @@ import org.mule.test.module.extension.AbstractExtensionFunctionalTestCase;
 import org.mule.test.vegan.extension.AppleConfig;
 import org.mule.test.vegan.extension.HealthyFood;
 
+import org.junit.Test;
+
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
-
 public class ConfigOverrideTestCase extends AbstractExtensionFunctionalTestCase {
+
+  @Override
+  protected boolean isDisposeContextPerClass() {
+    return true;
+  }
 
   @Override
   protected String getConfigFile() {
@@ -65,7 +70,7 @@ public class ConfigOverrideTestCase extends AbstractExtensionFunctionalTestCase 
     final String flowName = "timeToPeelOverrideOperationWithBananaDynamic";
     TypedValue<Integer> result = flowRunner(flowName)
         .withPayload("45")
-        .withVariable("declaredVar", null)
+        //        .withVariable("declaredVar", null)
         .run().getMessage().getPayload();
     assertThat(result.getValue(), is(45));
 
@@ -83,7 +88,7 @@ public class ConfigOverrideTestCase extends AbstractExtensionFunctionalTestCase 
 
     result = flowRunner(flowName)
         .withPayload(null)
-        .withVariable("declaredVar", null)
+        //        .withVariable("declaredVar", null)
         .run().getMessage().getPayload();
     assertThat(result.getValue(), is(nullValue()));
   }

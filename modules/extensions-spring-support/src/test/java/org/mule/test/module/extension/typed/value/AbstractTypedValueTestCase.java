@@ -23,6 +23,11 @@ public abstract class AbstractTypedValueTestCase extends AbstractExtensionFuncti
   static final MediaType APPLICATION_JAVA = MediaType.parse("application/java");
   static final KnockeableDoor DOOR = new KnockeableDoor("Saul");
 
+  @Override
+  protected boolean isDisposeContextPerClass() {
+    return true;
+  }
+
   void runAndAssertTypedValue(String flowName, Object payloadValue, MediaType mediaType, Charset charset)
       throws Exception {
     Object payload = flowRunner(flowName).run().getMessage().getPayload().getValue();
