@@ -6,7 +6,7 @@
  */
 package org.mule.runtime.core.util.func;
 
-import static reactor.core.Exceptions.propagate;
+import static org.mule.runtime.core.util.ExceptionUtils.propagateReactor;
 
 import java.util.function.BiFunction;
 
@@ -18,7 +18,7 @@ public interface CheckedBiFunction<T, U, R> extends BiFunction<T, U, R> {
     try {
       return applyChecked(t, u);
     } catch (Throwable throwable) {
-      throw propagate(throwable);
+      throw propagateReactor(throwable);
     }
   }
 

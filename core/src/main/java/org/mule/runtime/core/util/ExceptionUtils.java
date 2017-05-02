@@ -12,9 +12,12 @@ import static java.util.Optional.ofNullable;
 import static org.apache.commons.lang.SystemUtils.LINE_SEPARATOR;
 import static org.mule.runtime.core.component.ComponentAnnotations.ANNOTATION_NAME;
 import static org.mule.runtime.core.exception.ErrorMapping.ANNOTATION_ERROR_MAPPINGS;
+import static reactor.core.Exceptions.propagate;
+
 import org.mule.runtime.api.component.ComponentIdentifier;
 import org.mule.runtime.api.connection.ConnectionException;
 import org.mule.runtime.api.exception.ErrorMessageAwareException;
+import org.mule.runtime.api.exception.MuleFatalJvmException;
 import org.mule.runtime.api.message.Error;
 import org.mule.runtime.api.message.ErrorType;
 import org.mule.runtime.api.meta.AnnotatedObject;
@@ -275,4 +278,19 @@ public class ExceptionUtils extends org.apache.commons.lang.exception.ExceptionU
     return exception instanceof ErrorMessageAwareException ? ((ErrorMessageAwareException) exception).getRootCause() : exception;
   }
 
+  /**
+   * Propagate an exception through streams, may wrap it to avoid throwing from Reactor code.
+   *
+   * @param t throwable.
+   * @return possibly wrapped exception to avoid Reactor stopping the stream.
+   */
+  public static RuntimeException propagateReactor(Throwable t) {
+    if (t instanceof LinkageError) {
+      return propagate(new MuleFatalJvmException(t));
+    } else if (t instanceof VirtualMachineError) {
+      return propagate(new MuleFatalJvmException(t));
+    } else {
+      return propagate(t);
+    }
+  }
 }

@@ -10,6 +10,7 @@ import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.disposeIfNeeded
 import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNeeded;
 import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.startIfNeeded;
 import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.stopIfNeeded;
+import static org.mule.runtime.core.util.ExceptionUtils.propagateReactor;
 import static org.mule.runtime.module.extension.internal.ExtensionProperties.COMPLETION_CALLBACK_CONTEXT_PARAM;
 import static org.slf4j.LoggerFactory.getLogger;
 import org.mule.runtime.api.exception.MuleException;
@@ -64,6 +65,8 @@ public final class ReactiveOperationExecutionWrapper implements OperationExecuto
         delegate.execute(executionContext);
       } catch (Exception e) {
         sink.error(e);
+      } catch (Throwable t) {
+        sink.error(propagateReactor(t));
       }
     });
   }
