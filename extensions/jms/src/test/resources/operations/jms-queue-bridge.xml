@@ -17,6 +17,7 @@
 
     <flow name="bridge">
         <jms:consume config-ref="config" destination="#[initialDestination]" maximumWait="1000"/>
+        <logger level="ERROR"/>
         <jms:publish config-ref="config" destination="#[finalDestination]">
             <jms:message jmsxProperties="#[attributes.properties.jmsxProperties]">
                 <jms:body>#[bridgePrefix ++ payload]</jms:body>

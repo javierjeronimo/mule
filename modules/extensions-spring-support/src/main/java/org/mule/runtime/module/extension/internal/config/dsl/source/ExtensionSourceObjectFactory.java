@@ -11,6 +11,8 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toList;
 import static org.mule.runtime.api.i18n.I18nMessageFactory.createStaticMessage;
 import static org.mule.runtime.core.api.lifecycle.LifecycleUtils.initialiseIfNeeded;
+import static org.mule.runtime.core.util.ClassUtils.withContextClassLoader;
+import static org.mule.runtime.module.extension.internal.util.MuleExtensionUtils.getClassLoader;
 import org.mule.runtime.api.exception.MuleRuntimeException;
 import org.mule.runtime.api.lifecycle.InitialisationException;
 import org.mule.runtime.api.meta.model.ExtensionModel;
@@ -83,29 +85,29 @@ public class ExtensionSourceObjectFactory extends AbstractExtensionObjectFactory
 
   @Override
   public ExtensionMessageSource doGetObject() throws ConfigurationException, InitialisationException {
-    parametersResolver.checkParameterGroupExclusiveness(sourceModel, parameters.keySet());
-    ResolverSet nonCallbackParameters = getNonCallbackParameters();
+    return withContextClassLoader(getClassLoader(extensionModel), () -> {
+      parametersResolver.checkParameterGroupExclusiveness(sourceModel, parameters.keySet());
+      ResolverSet nonCallbackParameters = getNonCallbackParameters();
 
-    if (nonCallbackParameters.isDynamic()) {
-      throw dynamicParameterException(nonCallbackParameters, sourceModel);
-    }
+      if (nonCallbackParameters.isDynamic()) {
+        throw dynamicParameterException(nonCallbackParameters, sourceModel);
+      }
 
-    ResolverSet responseCallbackParameters = getCallbackParameters(sourceModel.getSuccessCallback());
-    ResolverSet errorCallbackParameters = getCallbackParameters(sourceModel.getErrorCallback());
+      ResolverSet responseCallbackParameters = getCallbackParameters(sourceModel.getSuccessCallback());
+      ResolverSet errorCallbackParameters = getCallbackParameters(sourceModel.getErrorCallback());
 
-    initialiseIfNeeded(nonCallbackParameters, true, muleContext);
-    initialiseIfNeeded(responseCallbackParameters, true, muleContext);
-    initialiseIfNeeded(errorCallbackParameters, true, muleContext);
+      initialiseIfNeeded(nonCallbackParameters, true, muleContext);
+      initialiseIfNeeded(responseCallbackParameters, true, muleContext);
+      initialiseIfNeeded(errorCallbackParameters, true, muleContext);
 
-    ExtensionMessageSource messageSource =
-        new ExtensionMessageSource(extensionModel,
-                                   sourceModel,
-                                   getSourceFactory(nonCallbackParameters, responseCallbackParameters, errorCallbackParameters),
-                                   configurationProvider,
-                                   getRetryPolicyTemplate(),
-                                   cursorProviderFactory,
-                                   muleContext.getExtensionManager());
-    return messageSource;
+      return new ExtensionMessageSource(extensionModel,
+                                      sourceModel,
+                                      getSourceFactory(nonCallbackParameters, responseCallbackParameters, errorCallbackParameters),
+                                      configurationProvider,
+                                      getRetryPolicyTemplate(),
+                                      cursorProviderFactory,
+                                      muleContext.getExtensionManager());
+    });
   }
 
   private ResolverSet getNonCallbackParameters() throws ConfigurationException {

@@ -118,21 +118,26 @@ public final class ParametersResolver implements ObjectTypeParametersResolver {
         getParametersAsResolverSet(model, getFlatParameters(inlineGroups, model.getAllParameterModels()), muleContext);
     for (ParameterGroupModel group : inlineGroups) {
 
-      Optional<ParameterGroupDescriptor> descriptor = group.getModelProperty(ParameterGroupModelProperty.class)
-        .map(ParameterGroupModelProperty::getDescriptor);
-
-      String groupKey = descriptor
-          .map(d -> getContainerName(d.getContainer()))
-          .orElseGet(group::getName);
-
-      if (parameters.containsKey(groupKey)) {
-        resolverSet.add(groupKey, toValueResolver(parameters.get(groupKey), group.getModelProperties()));
-      } else if (descriptor.isPresent()){
-        resolverSet.add(groupKey, NullSafeValueResolverWrapper.of(new StaticValueResolver<>(null), descriptor.get().getMetadataType(),
-                                                   muleContext, this));
-      }
+      getInlineGroupResolver(group, resolverSet, muleContext);
     }
     return resolverSet;
+  }
+
+  private void getInlineGroupResolver(ParameterGroupModel group, ResolverSet resolverSet, MuleContext muleContext) {
+    Optional<ParameterGroupDescriptor> descriptor = group.getModelProperty(ParameterGroupModelProperty.class)
+        .map(ParameterGroupModelProperty::getDescriptor);
+
+    String groupKey = descriptor
+        .map(d -> getContainerName(d.getContainer()))
+        .orElseGet(group::getName);
+
+    if (parameters.containsKey(groupKey)) {
+      resolverSet.add(groupKey, toValueResolver(parameters.get(groupKey), group.getModelProperties()));
+    } else if (descriptor.isPresent()) {
+      resolverSet.add(groupKey,
+                      NullSafeValueResolverWrapper.of(new StaticValueResolver<>(null), descriptor.get().getMetadataType(),
+                                                      muleContext, this));
+    }
   }
 
   public ResolverSet getParametersAsResolverSet(ParameterizedModel model, List<ParameterModel> parameterModels,
