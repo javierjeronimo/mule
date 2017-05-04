@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/javierjeronimo/mule.svg?branch=mule-3.x)](https://travis-ci.org/javierjeronimo/mule)
+
 Stop the point-to-point madness
 ===============================
 Mule is a lightweight integration platform that allows you to connect anything anywhere. Rather than creating point-to-point integrations between systems, services, APIs and devices, you can use Mule to intelligently manage message-routing, data mapping, orchestration, reliability, security and scalability between nodes. Plug other systems and applications into Mule and let it handle all the communication betweens systems, enabling you track and monitor everything that happens. 
