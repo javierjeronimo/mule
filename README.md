@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/javierjeronimo/mule.svg?branch=master)](https://travis-ci.org/javierjeronimo/mule)
+[![Build Status](https://travis-ci.org/javierjeronimo/mule.svg?branch=mule-4.x)](https://travis-ci.org/javierjeronimo/mule)
 [![Code Climate](https://codeclimate.com/github/javierjeronimo/mule/badges/gpa.svg)](https://codeclimate.com/github/javierjeronimo/mule)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/cf4e0c3f23a844a4972f84238ad4d054)](https://www.codacy.com/app/javierjeronimo/mule?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=javierjeronimo/mule&amp;utm_campaign=Badge_Grade)
 
