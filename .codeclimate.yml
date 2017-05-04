@@ -1,0 +1,16 @@
+engines:
+  pmd:
+    enabled: true
+    channel: "beta"
+  checkstyle:
+    enabled: true
+    channel: "beta"
+  fixme:
+    enabled: true
+  shellcheck:
+    enabled: true
+
+ratings:
+  paths:
+  - "**.java"
+  - "**.sh"
